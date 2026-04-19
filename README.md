@@ -31,7 +31,7 @@ Wastebuck is a powerful, yet playful Chrome Extension designed for the modern em
 Follow these steps to get **Wastebuck** running in your browser:
 
 1. **Download the Project:**
-   - Clone this repository or download the ZIP file and extract it.
+   - Clone the "extension" folder from this repo as a ZIP file and extract it locally.
 2. **Open Chrome Extensions:**
    - Navigate to `chrome://extensions/` in your Google Chrome browser.
 3. **Enable Developer Mode:**

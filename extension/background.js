@@ -59,15 +59,17 @@ async function tick() {
     let countSeconds = 0;
     let activeDomain = null;
 
-    // Break overrides working-hours requirement.
-    if (state.onBreak) {
-      countSeconds = delta;
-      activeDomain = "break";
-    } else if (inWork) {
-      const domain = await getActiveWasteDomain(settings);
-      if (domain) {
+    // Break only counts during working hours — outside work hours, nothing counts.
+    if (inWork) {
+      if (state.onBreak) {
         countSeconds = delta;
-        activeDomain = domain;
+        activeDomain = "break";
+      } else {
+        const domain = await getActiveWasteDomain(settings);
+        if (domain) {
+          countSeconds = delta;
+          activeDomain = domain;
+        }
       }
     }
 

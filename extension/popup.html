@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WasteBucks</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="head">
+        <div class="brand">
+          <span class="logo">💸</span>
+          <span class="brand-name">WasteBucks</span>
+        </div>
+        <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+      </header>
+
+      <section id="dashboard" class="view">
+        <div class="counter">
+          <div class="label">Earned doing nothing today</div>
+          <div class="amount" id="today-amount">$0.00</div>
+          <div class="sub" id="status-line">Idle</div>
+        </div>
+
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 120" class="gauge" aria-hidden="true">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1">
+                <stop offset="0%" stop-color="#22c55e" />
+                <stop offset="55%" stop-color="#eab308" />
+                <stop offset="100%" stop-color="#ef4444" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M20,110 A80,80 0 0 1 180,110"
+              stroke="#1f2937"
+              stroke-width="16"
+              fill="none"
+              stroke-linecap="round"
+            />
+            <path
+              id="gauge-fg"
+              d="M20,110 A80,80 0 0 1 180,110"
+              stroke="url(#g)"
+              stroke-width="16"
+              fill="none"
+              stroke-linecap="round"
+              stroke-dasharray="251.3"
+              stroke-dashoffset="251.3"
+            />
+            <line
+              id="needle"
+              x1="100"
+              y1="110"
+              x2="100"
+              y2="40"
+              stroke="#f8fafc"
+              stroke-width="3"
+              stroke-linecap="round"
+              transform="rotate(-90 100 110)"
+            />
+            <circle cx="100" cy="110" r="6" fill="#f8fafc" />
+          </svg>
+          <div class="gauge-meta">
+            <span id="goal-pct">0%</span>
+            <span class="muted">of $<span id="goal-val">0</span> daily goal</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="break-btn" class="btn btn-warn">☕ Take a break</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Today time</div>
+            <div class="stat-val" id="today-time">0m</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">All-time wasted</div>
+            <div class="stat-val" id="cum-amount">$0.00</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">All-time hours</div>
+            <div class="stat-val" id="cum-time">0h</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings" class="view hidden">
+        <h2>Settings</h2>
+        <label>Hourly salary ($)
+          <input id="s-rate" type="number" min="0" step="0.5" />
+        </label>
+        <div class="row">
+          <label>Work start
+            <input id="s-start" type="time" />
+          </label>
+          <label>Work end
+            <input id="s-end" type="time" />
+          </label>
+        </div>
+        <label>Daily waste goal ($)
+          <input id="s-goal" type="number" min="0" step="1" />
+        </label>
+        <label>Tracked domains (comma separated)
+          <input id="s-domains" type="text" />
+        </label>
+        <div class="actions stacked">
+          <button id="save-btn" class="btn btn-primary">Save</button>
+          <button id="reset-btn" class="btn btn-ghost">Reset all stats</button>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

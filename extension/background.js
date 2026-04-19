@@ -1,4 +1,4 @@
-// MV3 service worker — minimal, alarm-driven ticker.
+// MV3 service worker — drift-corrected, single-source-of-truth ticker.
 import { getAll, setState, todayKey, DEFAULTS } from "./storage.js";
 import {
   hostFromUrl,
@@ -9,17 +9,25 @@ import {
 
 const ALARM = "wb-tick";
 const TICK_SECONDS = 5;
+// Cap a single delta to avoid huge jumps when the SW was suspended for hours.
+const MAX_DELTA_SECONDS = 60;
 
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(["settings", "state"]);
-  if (!data.settings) await chrome.storage.local.set({ settings: DEFAULTS.settings });
-  if (!data.state) await chrome.storage.local.set({ state: DEFAULTS.state });
-  chrome.alarms.create(ALARM, { periodInMinutes: TICK_SECONDS / 60 });
+  // Backward compat: merge defaults so new fields appear without wiping old data.
+  await chrome.storage.local.set({
+    settings: { ...DEFAULTS.settings, ...(data.settings || {}) },
+    state: { ...DEFAULTS.state, ...(data.state || {}) },
+  });
+  ensureAlarm();
 });
 
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(ensureAlarm);
+
+function ensureAlarm() {
+  // Recreating with the same name replaces it — guarantees only one timer.
   chrome.alarms.create(ALARM, { periodInMinutes: TICK_SECONDS / 60 });
-});
+}
 
 async function getActiveWasteDomain(settings) {
   // user must be active (not idle 60s+) for site tracking
@@ -32,57 +40,76 @@ async function getActiveWasteDomain(settings) {
   return matchesWasteDomain(host, settings.wasteDomains);
 }
 
+// Single in-flight tick guard to prevent race conditions.
+let tickInFlight = null;
+
 async function tick() {
-  const { settings, state } = await getAll();
-  const now = new Date();
-  const inWork = isWithinWorkingHours(now, settings.workStart, settings.workEnd);
-  if (!inWork) {
-    await setState({ activeDomain: null, lastTickMs: now.getTime() });
-    return;
-  }
+  if (tickInFlight) return tickInFlight;
+  tickInFlight = (async () => {
+    const { settings, state } = await getAll();
+    const now = Date.now();
 
-  // If on break, count regardless of which tab is open.
-  let countSeconds = 0;
-  let activeDomain = null;
-  if (state.onBreak) {
-    countSeconds = TICK_SECONDS;
-    activeDomain = "break";
-  } else {
-    const domain = await getActiveWasteDomain(settings);
-    if (domain) {
-      countSeconds = TICK_SECONDS;
-      activeDomain = domain;
+    // Compute elapsed seconds since last tick using wall clock — drift-corrected.
+    let delta = state.lastTickMs ? (now - state.lastTickMs) / 1000 : TICK_SECONDS;
+    if (delta < 0) delta = 0;
+    if (delta > MAX_DELTA_SECONDS) delta = MAX_DELTA_SECONDS;
+
+    const inWork = isWithinWorkingHours(new Date(now), settings.workStart, settings.workEnd);
+
+    let countSeconds = 0;
+    let activeDomain = null;
+
+    // Break overrides working-hours requirement.
+    if (state.onBreak) {
+      countSeconds = delta;
+      activeDomain = "break";
+    } else if (inWork) {
+      const domain = await getActiveWasteDomain(settings);
+      if (domain) {
+        countSeconds = delta;
+        activeDomain = domain;
+      }
     }
-  }
 
-  if (countSeconds > 0) {
-    const earned = countSeconds * earningsPerSecond(settings.hourlyRate);
-    const k = todayKey(now);
-    const today = state.daily[k] || { seconds: 0, earnings: 0 };
-    const daily = {
-      ...state.daily,
-      [k]: {
-        seconds: today.seconds + countSeconds,
-        earnings: today.earnings + earned,
-      },
-    };
-    await setState({
-      cumulativeSeconds: state.cumulativeSeconds + countSeconds,
-      cumulativeEarnings: state.cumulativeEarnings + earned,
-      daily,
-      activeDomain,
-      lastTickMs: now.getTime(),
-    });
-  } else {
-    await setState({ activeDomain: null, lastTickMs: now.getTime() });
-  }
+    if (countSeconds > 0) {
+      const earned = countSeconds * earningsPerSecond(settings.hourlyRate);
+      const k = todayKey(new Date(now));
+      const today = state.daily[k] || { seconds: 0, earnings: 0 };
+      const daily = {
+        ...state.daily,
+        [k]: {
+          seconds: today.seconds + countSeconds,
+          earnings: today.earnings + earned,
+        },
+      };
+      await setState({
+        cumulativeSeconds: state.cumulativeSeconds + countSeconds,
+        cumulativeEarnings: state.cumulativeEarnings + earned,
+        daily,
+        activeDomain,
+        lastTickMs: now,
+      });
+    } else {
+      await setState({ activeDomain: null, lastTickMs: now });
+    }
+  })().finally(() => {
+    tickInFlight = null;
+  });
+  return tickInFlight;
 }
 
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === ALARM) tick().catch(console.error);
 });
 
-// Allow popup to request an immediate tick & settings refresh.
+// React instantly when settings/state change (e.g. user edits in popup).
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local") return;
+  if (changes.settings || changes.state) {
+    tick().catch(console.error);
+  }
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "wb-tick-now") {
     tick().then(() => sendResponse({ ok: true }));

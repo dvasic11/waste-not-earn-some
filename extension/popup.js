@@ -1,8 +1,9 @@
 import { getAll, setSettings, setState, getTodayStats, DEFAULTS } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
-const GAUGE_LEN = 251.3; // path length of the half-circle
+const GAUGE_LEN = 251.3;
 let timer = null;
+let saveDebounce = null;
 
 function fmtMoney(n, cur = "$") {
   return `${cur}${(n || 0).toFixed(2)}`;
@@ -15,6 +16,84 @@ function fmtTime(seconds) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// ---------- Validation ----------
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function validate() {
+  const errors = {};
+  const rate = Number($("s-rate").value);
+  if (!Number.isFinite(rate) || rate < 0 || rate > 10000) {
+    errors.rate = "Enter a number between 0 and 10000";
+  }
+  const start = $("s-start").value;
+  const end = $("s-end").value;
+  if (!TIME_RE.test(start)) errors.start = "Use HH:MM";
+  if (!TIME_RE.test(end)) errors.end = "Use HH:MM";
+  if (!errors.start && !errors.end && start === end) {
+    errors.end = "Start and end must differ";
+  }
+  const goal = Number($("s-goal").value);
+  if (!Number.isFinite(goal) || goal < 0 || goal > 100000) {
+    errors.goal = "Enter a number between 0 and 100000";
+  }
+  const domains = parseDomains($("s-domains").value);
+  if (domains.length === 0) errors.domains = "Add at least one domain";
+
+  // Paint errors
+  showError("err-rate", errors.rate);
+  showError("err-start", errors.start);
+  showError("err-end", errors.end);
+  showError("err-goal", errors.goal);
+  showError("err-domains", errors.domains);
+
+  return { ok: Object.keys(errors).length === 0, rate, start, end, goal, domains };
+}
+
+function showError(id, msg) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = msg || "";
+  el.classList.toggle("visible", !!msg);
+}
+
+function parseDomains(str) {
+  return str
+    .split(",")
+    .map((d) =>
+      d.trim().toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/.*$/, "")
+    )
+    .filter(Boolean);
+}
+
+// ---------- Persistence ----------
+async function persistIfValid() {
+  const v = validate();
+  if (!v.ok) {
+    $("save-status").textContent = "⚠ Fix errors above";
+    $("save-status").className = "save-status err";
+    return;
+  }
+  await setSettings({
+    hourlyRate: v.rate,
+    workStart: v.start,
+    workEnd: v.end,
+    dailyGoal: v.goal,
+    wasteDomains: v.domains,
+  });
+  $("save-status").textContent = "✓ Saved automatically";
+  $("save-status").className = "save-status ok";
+  // Background reacts to storage.onChanged automatically — no reload needed.
+}
+
+function scheduleSave() {
+  clearTimeout(saveDebounce);
+  saveDebounce = setTimeout(persistIfValid, 350);
+}
+
+// ---------- Render ----------
 async function render() {
   const { settings, state } = await getAll();
   const today = getTodayStats(state);
@@ -30,11 +109,9 @@ async function render() {
     : 0;
   $("goal-pct").textContent = `${pct.toFixed(0)}%`;
   $("gauge-fg").setAttribute("stroke-dashoffset", String(GAUGE_LEN * (1 - pct / 100)));
-  // needle: -90deg (left) at 0%, +90deg (right) at 100%
   const angle = -90 + (180 * pct) / 100;
   $("needle").setAttribute("transform", `rotate(${angle} 100 110)`);
 
-  // status line
   let status = "Idle — not in working hours or no time-waster open";
   if (state.onBreak) status = "☕ On break — every second still counts";
   else if (state.activeDomain) status = `Tracking ${state.activeDomain} 💸`;
@@ -44,22 +121,27 @@ async function render() {
   breakBtn.textContent = state.onBreak ? "▶ Continue work" : "☕ Take a break";
   breakBtn.classList.toggle("on", !!state.onBreak);
 
-  // settings inputs
-  $("s-rate").value = settings.hourlyRate;
-  $("s-start").value = settings.workStart;
-  $("s-end").value = settings.workEnd;
-  $("s-goal").value = settings.dailyGoal;
-  $("s-domains").value = settings.wasteDomains.join(", ");
+  // Only refresh inputs when settings panel is hidden — avoids fighting user typing.
+  if ($("settings").classList.contains("hidden")) {
+    $("s-rate").value = settings.hourlyRate;
+    $("s-start").value = settings.workStart;
+    $("s-end").value = settings.workEnd;
+    $("s-goal").value = settings.dailyGoal;
+    $("s-domains").value = settings.wasteDomains.join(", ");
+  }
 }
 
 function showSettings(show) {
   $("dashboard").classList.toggle("hidden", show);
   $("settings").classList.toggle("hidden", !show);
+  if (show) {
+    $("save-status").textContent = "";
+    validate();
+  }
 }
 
 async function init() {
   await render();
-  // ask background for an immediate tick so the popup feels live
   chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());
   timer = setInterval(() => {
     chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());
@@ -72,24 +154,20 @@ async function init() {
 
   $("break-btn").addEventListener("click", async () => {
     const { state } = await getAll();
-    await setState({ onBreak: !state.onBreak });
+    await setState({ onBreak: !state.onBreak, lastTickMs: Date.now() });
     render();
   });
 
-  $("save-btn").addEventListener("click", async () => {
-    const domains = $("s-domains").value
-      .split(",")
-      .map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, ""))
-      .filter(Boolean);
-    await setSettings({
-      hourlyRate: Number($("s-rate").value) || 0,
-      workStart: $("s-start").value || DEFAULTS.settings.workStart,
-      workEnd: $("s-end").value || DEFAULTS.settings.workEnd,
-      dailyGoal: Number($("s-goal").value) || 0,
-      wasteDomains: domains.length ? domains : DEFAULTS.settings.wasteDomains,
+  // Live validation + debounced auto-save on every input change.
+  ["s-rate", "s-start", "s-end", "s-goal", "s-domains"].forEach((id) => {
+    $(id).addEventListener("input", () => {
+      validate();
+      scheduleSave();
     });
-    showSettings(false);
-    render();
+    $(id).addEventListener("change", () => {
+      validate();
+      scheduleSave();
+    });
   });
 
   $("reset-btn").addEventListener("click", () => {
@@ -97,8 +175,18 @@ async function init() {
     chrome.runtime.sendMessage({ type: "wb-reset" }, () => render());
   });
 
+  $("restore-btn").addEventListener("click", async () => {
+    if (!confirm("Restore default settings?")) return;
+    await setSettings(DEFAULTS.settings);
+    render();
+    showSettings(true);
+  });
+
   chrome.storage.onChanged.addListener(render);
 }
 
-window.addEventListener("unload", () => { if (timer) clearInterval(timer); });
+window.addEventListener("unload", () => {
+  if (timer) clearInterval(timer);
+  if (saveDebounce) clearTimeout(saveDebounce);
+});
 init();

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import zipUrl from "@/assets/wastebucks.zip?url";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,7 +27,7 @@ function Landing() {
 
   const download = () => {
     setStatus("Preparing download…");
-    fetch("/wastebucks.zip")
+    fetch(zipUrl)
       .then((res) => {
         if (!res.ok) throw new Error(`Download failed: ${res.status}`);
         return res.blob();

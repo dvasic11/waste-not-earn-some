@@ -84,10 +84,39 @@ async function tick() {
           earnings: today.earnings + earned,
         },
       };
+      // Per-domain aggregation (skip the synthetic "break" bucket).
+      const domains = { ...(state.domains || {}) };
+      if (activeDomain && activeDomain !== "break") {
+        const cur = domains[activeDomain] || { seconds: 0, earnings: 0 };
+        domains[activeDomain] = {
+          seconds: cur.seconds + countSeconds,
+          earnings: cur.earnings + earned,
+        };
+      }
+      // Streak: when today crosses 100% of goal, bump streak once per day.
+      let streak = state.streak || 0;
+      let streakLastDay = state.streakLastDay || null;
+      const goal = Number(settings.dailyGoal) || 0;
+      const newToday = daily[k];
+      if (goal > 0 && newToday.earnings >= goal && streakLastDay !== k) {
+        // Only continue the streak if yesterday also hit the goal (or no prior day yet).
+        const y = new Date(now);
+        y.setDate(y.getDate() - 1);
+        const yk = todayKey(y);
+        if (streakLastDay === yk || streakLastDay === null) {
+          streak = streak + 1;
+        } else {
+          streak = 1; // missed a day — reset and count today
+        }
+        streakLastDay = k;
+      }
       await setState({
         cumulativeSeconds: state.cumulativeSeconds + countSeconds,
         cumulativeEarnings: state.cumulativeEarnings + earned,
         daily,
+        domains,
+        streak,
+        streakLastDay,
         activeDomain,
         lastTickMs: now,
       });
@@ -121,4 +150,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     chrome.storage.local.set({ state: DEFAULTS.state }).then(() => sendResponse({ ok: true }));
     return true;
   }
+});
+
+// ---------- Keyboard shortcut: instant escape from time-wasters ----------
+chrome.commands?.onCommand.addListener(async (command) => {
+  if (command !== "wb-escape") return;
+  const { settings } = await getAll();
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  const tab = tabs[0];
+  if (!tab || !tab.id || !tab.url) return;
+  const host = hostFromUrl(tab.url);
+  const matched = matchesWasteDomain(host, settings.wasteDomains);
+  if (!matched) return;
+  const target = settings.redirectUrl || "https://mail.google.com";
+  chrome.tabs.update(tab.id, { url: target });
 });

@@ -16,6 +16,8 @@ export const DEFAULTS = {
       "reddit.com",
       "facebook.com",
     ],
+    // Productivity shortcut redirect target (Chrome command set in manifest).
+    redirectUrl: "https://mail.google.com",
   },
   state: {
     // running totals
@@ -23,6 +25,12 @@ export const DEFAULTS = {
     cumulativeEarnings: 0, // all-time wasted $
     // per-day map: { "YYYY-MM-DD": { seconds, earnings } }
     daily: {},
+    // per-domain all-time totals: { "youtube.com": { seconds, earnings } }
+    domains: {},
+    // streak of consecutive days reaching 100% goal
+    streak: 0,
+    // last day counted for streak (YYYY-MM-DD), to avoid double counting
+    streakLastDay: null,
     // override
     onBreak: false,
     // last tick we accounted for, ms since epoch
@@ -64,4 +72,26 @@ export function todayKey(d = new Date()) {
 export function getTodayStats(state) {
   const k = todayKey();
   return state.daily[k] || { seconds: 0, earnings: 0 };
+}
+
+// Returns last N days' stats (oldest -> newest) with goal completion %.
+export function getLastNDays(state, settings, n = 7) {
+  const out = [];
+  const goal = Math.max(0, Number(settings.dailyGoal) || 0);
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const k = todayKey(d);
+    const day = state.daily[k] || { seconds: 0, earnings: 0 };
+    const pct = goal > 0 ? Math.min(200, (day.earnings / goal) * 100) : 0;
+    out.push({
+      key: k,
+      date: d,
+      label: d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2),
+      earnings: day.earnings,
+      seconds: day.seconds,
+      pct,
+    });
+  }
+  return out;
 }

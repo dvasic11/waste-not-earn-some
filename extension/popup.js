@@ -1,9 +1,10 @@
-import { getAll, setSettings, setState, getTodayStats, DEFAULTS } from "./storage.js";
+import { getAll, setSettings, setState, getTodayStats, getLastNDays, DEFAULTS } from "./storage.js";
 
 const $ = (id) => document.getElementById(id);
 const GAUGE_LEN = 251.3;
 let timer = null;
 let saveDebounce = null;
+let prevStreak = 0;
 
 function fmtMoney(n, cur = "$") {
   return `${cur}${(n || 0).toFixed(2)}`;
@@ -14,6 +15,17 @@ function fmtTime(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+function liquidColor(pct) {
+  if (pct >= 80) return "#22c55e";
+  if (pct >= 40) return "#eab308";
+  return "#ef4444";
+}
+
+function isValidUrl(s) {
+  try { const u = new URL(s); return u.protocol === "http:" || u.protocol === "https:"; }
+  catch { return false; }
 }
 
 // ---------- Validation ----------
@@ -38,6 +50,8 @@ function validate() {
   }
   const domains = parseDomains($("s-domains").value);
   if (domains.length === 0) errors.domains = "Add at least one domain";
+  const redirect = ($("s-redirect").value || "").trim();
+  if (redirect && !isValidUrl(redirect)) errors.redirect = "Use a full http(s) URL";
 
   // Paint errors
   showError("err-rate", errors.rate);
@@ -45,8 +59,9 @@ function validate() {
   showError("err-end", errors.end);
   showError("err-goal", errors.goal);
   showError("err-domains", errors.domains);
+  showError("err-redirect", errors.redirect);
 
-  return { ok: Object.keys(errors).length === 0, rate, start, end, goal, domains };
+  return { ok: Object.keys(errors).length === 0, rate, start, end, goal, domains, redirect };
 }
 
 function showError(id, msg) {
@@ -82,6 +97,7 @@ async function persistIfValid() {
     workEnd: v.end,
     dailyGoal: v.goal,
     wasteDomains: v.domains,
+    redirectUrl: v.redirect || DEFAULTS.settings.redirectUrl,
   });
   $("save-status").textContent = "✓ Saved automatically";
   $("save-status").className = "save-status ok";
@@ -121,6 +137,23 @@ async function render() {
   breakBtn.textContent = state.onBreak ? "▶ Continue work" : "☕ Take a break";
   breakBtn.classList.toggle("on", !!state.onBreak);
 
+  // Streak
+  const streak = state.streak || 0;
+  $("streak-num").textContent = streak;
+  if (streak > prevStreak) {
+    const pill = $("streak-pill");
+    pill.classList.remove("bump");
+    void pill.offsetWidth; // restart animation
+    pill.classList.add("bump");
+  }
+  prevStreak = streak;
+
+  // 7-day history
+  renderHistory(state, settings);
+
+  // Leaderboard
+  renderLeaderboard(state, settings);
+
   // Only refresh inputs when settings panel is hidden — avoids fighting user typing.
   if ($("settings").classList.contains("hidden")) {
     $("s-rate").value = settings.hourlyRate;
@@ -128,15 +161,86 @@ async function render() {
     $("s-end").value = settings.workEnd;
     $("s-goal").value = settings.dailyGoal;
     $("s-domains").value = settings.wasteDomains.join(", ");
+    $("s-redirect").value = settings.redirectUrl || "";
   }
 }
 
+function renderHistory(state, settings) {
+  const days = getLastNDays(state, settings, 7);
+  const root = $("history");
+  // Build only once, then update fills (preserves animation transitions).
+  if (root.children.length !== 7) {
+    root.innerHTML = days
+      .map(
+        (_d, i) => `
+        <div class="day" data-i="${i}" title="">
+          <div class="liquid"></div>
+          <div class="day-label"></div>
+          <div class="day-pct"></div>
+        </div>`,
+      )
+      .join("");
+  }
+  const todayKey = days[days.length - 1].key;
+  [...root.children].forEach((el, i) => {
+    const d = days[i];
+    const fill = Math.min(100, d.pct);
+    const liquid = el.querySelector(".liquid");
+    const color = liquidColor(d.pct);
+    liquid.style.setProperty("--liquid-color", color);
+    liquid.style.background = color;
+    // Defer height update one frame so initial render animates from 0.
+    requestAnimationFrame(() => { liquid.style.height = `${fill}%`; });
+    el.querySelector(".day-label").textContent = d.label;
+    el.querySelector(".day-pct").textContent = `${Math.round(d.pct)}%`;
+    el.title = `${d.key} — ${fmtMoney(d.earnings, settings.currency)} (${Math.round(d.pct)}% of goal)`;
+    el.classList.toggle("today", d.key === todayKey);
+  });
+}
+
+function renderLeaderboard(state, settings) {
+  const root = $("leaderboard");
+  const entries = Object.entries(state.domains || {})
+    .map(([domain, v]) => ({ domain, ...v }))
+    .sort((a, b) => b.earnings - a.earnings)
+    .slice(0, 5);
+  if (entries.length === 0) {
+    root.innerHTML = `<div class="lb-empty">No tracked time yet — visit a tracked site during work hours.</div>`;
+    return;
+  }
+  const max = entries[0].earnings || 1;
+  root.innerHTML = entries
+    .map((e) => {
+      const pct = Math.min(100, (e.earnings / max) * 100);
+      return `
+        <div class="lb-row">
+          <div class="lb-bar" style="width:${pct}%"></div>
+          <div class="lb-content">
+            <span class="lb-domain">${e.domain}</span>
+            <span class="lb-meta">${fmtMoney(e.earnings, settings.currency)} · ${fmtTime(e.seconds)}</span>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
 function showSettings(show) {
-  $("dashboard").classList.toggle("hidden", show);
-  $("settings").classList.toggle("hidden", !show);
+  const dash = $("dashboard");
+  const settings = $("settings");
   if (show) {
+    // Dashboard slides out left, settings slides in from right.
+    dash.classList.add("hidden");
+    settings.classList.remove("hidden");
+    settings.classList.remove("slide-in-left");
+    settings.classList.add("slide-in-right");
     $("save-status").textContent = "";
     validate();
+  } else {
+    settings.classList.add("hidden");
+    dash.classList.remove("hidden");
+    dash.classList.remove("slide-in-right");
+    dash.classList.add("slide-in-left");
+    render();
   }
 }
 
@@ -152,6 +256,8 @@ async function init() {
     showSettings(!isSettings);
   });
 
+  $("settings-back").addEventListener("click", () => showSettings(false));
+
   $("break-btn").addEventListener("click", async () => {
     const { state } = await getAll();
     await setState({ onBreak: !state.onBreak, lastTickMs: Date.now() });
@@ -159,7 +265,7 @@ async function init() {
   });
 
   // Live validation + debounced auto-save on every input change.
-  ["s-rate", "s-start", "s-end", "s-goal", "s-domains"].forEach((id) => {
+  ["s-rate", "s-start", "s-end", "s-goal", "s-domains", "s-redirect"].forEach((id) => {
     $(id).addEventListener("input", () => {
       validate();
       scheduleSave();

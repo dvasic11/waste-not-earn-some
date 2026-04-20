@@ -345,6 +345,15 @@ async function init() {
     showSettings(true);
   });
 
+  // Shortcut: Chrome MV3 doesn't allow programmatic rebinding for security.
+  // The "Change in Chrome" button opens chrome://extensions/shortcuts.
+  // The recorder button is a visual preview that also opens that page.
+  const openShortcutPage = () => {
+    chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  };
+  $("s-shortcut").addEventListener("click", openShortcutPage);
+  $("s-shortcut-edit").addEventListener("click", openShortcutPage);
+
   chrome.storage.onChanged.addListener(render);
 }
 

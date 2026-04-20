@@ -23,9 +23,42 @@ function liquidColor(pct) {
   return "#ef4444";
 }
 
-function isValidUrl(s) {
-  try { const u = new URL(s); return u.protocol === "http:" || u.protocol === "https:"; }
-  catch { return false; }
+// Normalize a user-typed URL: accept "gmail.com", "youtube.com/feed", etc.
+// Prepends https:// when no protocol is given. Returns null if invalid.
+function normalizeUrl(raw) {
+  const s = (raw || "").trim();
+  if (!s) return null;
+  const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+  try {
+    const u = new URL(withProto);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (!u.hostname || !u.hostname.includes(".")) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Shortcut recorder ----------
+function formatShortcut(parts) {
+  return parts.join("+");
+}
+function eventToShortcut(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.metaKey) parts.push("Command");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey) parts.push("Shift");
+  const k = e.key;
+  if (!k || ["Control", "Shift", "Alt", "Meta"].includes(k)) return null;
+  let key = k.length === 1 ? k.toUpperCase() : k;
+  // Normalize common keys
+  if (key === " ") key = "Space";
+  parts.push(key);
+  // Chrome requires at least one modifier (Ctrl/Cmd/Alt) + a key
+  const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
+  if (!hasModifier) return null;
+  return formatShortcut(parts);
 }
 
 // ---------- Validation ----------
@@ -50,8 +83,13 @@ function validate() {
   }
   const domains = parseDomains($("s-domains").value);
   if (domains.length === 0) errors.domains = "Add at least one domain";
-  const redirect = ($("s-redirect").value || "").trim();
-  if (redirect && !isValidUrl(redirect)) errors.redirect = "Use a full http(s) URL";
+  const redirectRaw = ($("s-redirect").value || "").trim();
+  let redirect = "";
+  if (redirectRaw) {
+    const norm = normalizeUrl(redirectRaw);
+    if (!norm) errors.redirect = "Enter a valid domain (e.g. gmail.com)";
+    else redirect = norm;
+  }
 
   // Paint errors
   showError("err-rate", errors.rate);

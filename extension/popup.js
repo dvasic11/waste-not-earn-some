@@ -201,7 +201,25 @@ async function render() {
     $("s-goal").value = settings.dailyGoal;
     $("s-domains").value = settings.wasteDomains.join(", ");
     $("s-redirect").value = settings.redirectUrl || "";
+    refreshShortcutDisplay();
   }
+}
+
+async function refreshShortcutDisplay() {
+  if (!chrome.commands?.getAll) return;
+  try {
+    const cmds = await chrome.commands.getAll();
+    const esc = cmds.find((c) => c.name === "wb-escape");
+    const display = $("s-shortcut-display");
+    if (!display) return;
+    if (esc && esc.shortcut) {
+      display.textContent = esc.shortcut;
+      $("s-shortcut").classList.remove("unset");
+    } else {
+      display.textContent = "Not set";
+      $("s-shortcut").classList.add("unset");
+    }
+  } catch {}
 }
 
 function renderHistory(state, settings) {

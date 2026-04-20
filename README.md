@@ -11,7 +11,7 @@ Think of it as a **virtual side hustle meter**—the longer you slack off, the h
 ## ✨ Key Features
 
 - **💰 Real-Time Earnings Tracker:** Watch your bank balance grow second-by-second based on your specific salary.
-- **🕒 Smart Work Configuration:** Easily set your hourly rate, daily working hours, and currency.
+- **🕒 Smart Work Configuration:** Easily set your hourly rate and daily working hours.
 - **⏸️ Break Mode & Override:** Manually trigger tracking when you're away from your desk or stuck in a "this could have been an email" meeting.
 - **🌐 Domain Detection:** Automatically starts the "waste timer" when you visit pre-defined domains (YouTube, Reddit, etc.).
 - **🚀 Goal Speedometer:** Set a daily "slacking goal" (e.g., earn $20 while slacking) and watch the speedometer hit the red zone.
@@ -19,7 +19,6 @@ Think of it as a **virtual side hustle meter**—the longer you slack off, the h
 - **📊 Last 7 Days Progress Visualization:** View a 7-day history with dynamic visual squares filled with green liquid, showing your daily goal completion percentage at a glance.
 - **📈 Percentage Completion Display:** See exact goal completion percentages (e.g., "73%") for each day to track precise performance.
 - **🔥 Daily Streak Tracker:** Track consecutive days of 100% goal completion with a prominent streak counter to encourage consistency and habit-building.
-- **⬅️ Improved Settings Navigation:** Navigate back to the main screen with an intuitive back button instead of re-clicking the settings icon.
 - **⚡ Productivity Escape Shortcut:** Customize a keyboard shortcut to instantly switch from time-wasting sites to productive alternatives (Gmail, custom URLs, etc.).
 - **🏆 Time-Wasted Leaderboard:** Identify your biggest distractions with a ranked leaderboard showing which websites/apps consume the most of your unproductive time.
 

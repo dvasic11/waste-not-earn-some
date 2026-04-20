@@ -179,3 +179,4 @@ kbd {
 }
 .btn-link:hover { background: #111827; color: #f8fafc; }
 #settings code { background: #1f2937; padding: 1px 5px; border-radius: 4px; font-size: 11px; color: #fde68a; }
+.warn-note { display: block; margin-top: 4px; color: #fbbf24; line-height: 1.4; }

@@ -158,8 +158,9 @@ async function render() {
   $("cum-time").textContent = fmtTime(state.cumulativeSeconds);
   $("goal-val").textContent = settings.dailyGoal;
 
+  // Goal progress uses the SAME source value as the live counter.
   const pct = settings.dailyGoal > 0
-    ? Math.min(100, (today.earnings / settings.dailyGoal) * 100)
+    ? Math.max(0, Math.min(100, (today.earnings / settings.dailyGoal) * 100))
     : 0;
   $("goal-pct").textContent = `${pct.toFixed(0)}%`;
   $("gauge-fg").setAttribute("stroke-dashoffset", String(GAUGE_LEN * (1 - pct / 100)));

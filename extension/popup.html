@@ -13,7 +13,14 @@
           <span class="logo">💸</span>
           <span class="brand-name">WasteBucks</span>
         </div>
-        <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+        <div class="head-right">
+          <span id="streak-pill" class="streak-pill" title="Days in a row hitting goal">
+            <span class="streak-flame">🔥</span>
+            <span id="streak-num">0</span>
+            <span class="streak-label">day streak</span>
+          </span>
+          <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+        </div>
       </header>
 
       <section id="dashboard" class="view">
@@ -86,10 +93,23 @@
             <div class="stat-val" id="cum-time">0h</div>
           </div>
         </div>
+
+        <div class="section-block">
+          <div class="section-title">Last 7 days</div>
+          <div id="history" class="history" aria-label="7-day history"></div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title">Top time-wasters</div>
+          <div id="leaderboard" class="leaderboard"></div>
+        </div>
       </section>
 
       <section id="settings" class="view hidden">
-        <h2>Settings <span class="muted small">— changes save automatically</span></h2>
+        <div class="settings-head">
+          <button id="settings-back" class="icon-btn back-btn" title="Back to dashboard">←</button>
+          <h2>Settings <span class="muted small">— auto-saved</span></h2>
+        </div>
         <label>Hourly salary ($)
           <input id="s-rate" type="number" min="0" max="10000" step="0.5" />
           <span class="err" id="err-rate"></span>
@@ -111,6 +131,11 @@
         <label>Tracked domains (comma separated)
           <input id="s-domains" type="text" placeholder="youtube.com, instagram.com" />
           <span class="err" id="err-domains"></span>
+        </label>
+        <label>Escape redirect URL
+          <input id="s-redirect" type="url" placeholder="https://mail.google.com" />
+          <span class="muted small">Shortcut <kbd>Ctrl/Cmd+Shift+X</kbd> on a tracked site jumps here. Customize the shortcut at <span class="kbd-link">chrome://extensions/shortcuts</span>.</span>
+          <span class="err" id="err-redirect"></span>
         </label>
         <div id="save-status" class="save-status"></div>
         <div class="actions stacked">

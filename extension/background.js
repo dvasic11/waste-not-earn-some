@@ -162,6 +162,8 @@ chrome.commands?.onCommand.addListener(async (command) => {
   const host = hostFromUrl(tab.url);
   const matched = matchesWasteDomain(host, settings.wasteDomains);
   if (!matched) return;
-  const target = settings.redirectUrl || "https://mail.google.com";
+  let target = settings.redirectUrl || "https://mail.google.com";
+  // Normalize stored URL — accept "gmail.com" as well as full URLs.
+  if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   chrome.tabs.update(tab.id, { url: target });
 });

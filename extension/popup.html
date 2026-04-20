@@ -133,9 +133,18 @@
           <span class="err" id="err-domains"></span>
         </label>
         <label>Escape redirect URL
-          <input id="s-redirect" type="url" placeholder="https://mail.google.com" />
-          <span class="muted small">Shortcut <kbd>Ctrl/Cmd+Shift+X</kbd> on a tracked site jumps here. Customize the shortcut at <span class="kbd-link">chrome://extensions/shortcuts</span>.</span>
+          <input id="s-redirect" type="text" placeholder="gmail.com" autocomplete="off" />
+          <span class="muted small">No <code>https://</code> needed — we'll add it for you.</span>
           <span class="err" id="err-redirect"></span>
+        </label>
+        <label>Escape shortcut
+          <div class="shortcut-row">
+            <button type="button" id="s-shortcut" class="shortcut-btn" title="Click then press your key combo">
+              <span id="s-shortcut-display">Ctrl+Shift+X</span>
+            </button>
+            <button type="button" id="s-shortcut-edit" class="btn-link">Change in Chrome</button>
+          </div>
+          <span class="muted small">Click <strong>Change in Chrome</strong> to rebind (Chrome requires it). Pressing the combo on a tracked site jumps to your URL above.</span>
         </label>
         <div id="save-status" class="save-status"></div>
         <div class="actions stacked">

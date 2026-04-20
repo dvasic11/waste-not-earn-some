@@ -23,9 +23,42 @@ function liquidColor(pct) {
   return "#ef4444";
 }
 
-function isValidUrl(s) {
-  try { const u = new URL(s); return u.protocol === "http:" || u.protocol === "https:"; }
-  catch { return false; }
+// Normalize a user-typed URL: accept "gmail.com", "youtube.com/feed", etc.
+// Prepends https:// when no protocol is given. Returns null if invalid.
+function normalizeUrl(raw) {
+  const s = (raw || "").trim();
+  if (!s) return null;
+  const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+  try {
+    const u = new URL(withProto);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (!u.hostname || !u.hostname.includes(".")) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Shortcut recorder ----------
+function formatShortcut(parts) {
+  return parts.join("+");
+}
+function eventToShortcut(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.metaKey) parts.push("Command");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey) parts.push("Shift");
+  const k = e.key;
+  if (!k || ["Control", "Shift", "Alt", "Meta"].includes(k)) return null;
+  let key = k.length === 1 ? k.toUpperCase() : k;
+  // Normalize common keys
+  if (key === " ") key = "Space";
+  parts.push(key);
+  // Chrome requires at least one modifier (Ctrl/Cmd/Alt) + a key
+  const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
+  if (!hasModifier) return null;
+  return formatShortcut(parts);
 }
 
 // ---------- Validation ----------
@@ -50,8 +83,13 @@ function validate() {
   }
   const domains = parseDomains($("s-domains").value);
   if (domains.length === 0) errors.domains = "Add at least one domain";
-  const redirect = ($("s-redirect").value || "").trim();
-  if (redirect && !isValidUrl(redirect)) errors.redirect = "Use a full http(s) URL";
+  const redirectRaw = ($("s-redirect").value || "").trim();
+  let redirect = "";
+  if (redirectRaw) {
+    const norm = normalizeUrl(redirectRaw);
+    if (!norm) errors.redirect = "Enter a valid domain (e.g. gmail.com)";
+    else redirect = norm;
+  }
 
   // Paint errors
   showError("err-rate", errors.rate);
@@ -120,8 +158,9 @@ async function render() {
   $("cum-time").textContent = fmtTime(state.cumulativeSeconds);
   $("goal-val").textContent = settings.dailyGoal;
 
+  // Goal progress uses the SAME source value as the live counter.
   const pct = settings.dailyGoal > 0
-    ? Math.min(100, (today.earnings / settings.dailyGoal) * 100)
+    ? Math.max(0, Math.min(100, (today.earnings / settings.dailyGoal) * 100))
     : 0;
   $("goal-pct").textContent = `${pct.toFixed(0)}%`;
   $("gauge-fg").setAttribute("stroke-dashoffset", String(GAUGE_LEN * (1 - pct / 100)));
@@ -162,7 +201,25 @@ async function render() {
     $("s-goal").value = settings.dailyGoal;
     $("s-domains").value = settings.wasteDomains.join(", ");
     $("s-redirect").value = settings.redirectUrl || "";
+    refreshShortcutDisplay();
   }
+}
+
+async function refreshShortcutDisplay() {
+  if (!chrome.commands?.getAll) return;
+  try {
+    const cmds = await chrome.commands.getAll();
+    const esc = cmds.find((c) => c.name === "wb-escape");
+    const display = $("s-shortcut-display");
+    if (!display) return;
+    if (esc && esc.shortcut) {
+      display.textContent = esc.shortcut;
+      $("s-shortcut").classList.remove("unset");
+    } else {
+      display.textContent = "Not set";
+      $("s-shortcut").classList.add("unset");
+    }
+  } catch {}
 }
 
 function renderHistory(state, settings) {
@@ -287,6 +344,15 @@ async function init() {
     render();
     showSettings(true);
   });
+
+  // Shortcut: Chrome MV3 doesn't allow programmatic rebinding for security.
+  // The "Change in Chrome" button opens chrome://extensions/shortcuts.
+  // The recorder button is a visual preview that also opens that page.
+  const openShortcutPage = () => {
+    chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  };
+  $("s-shortcut").addEventListener("click", openShortcutPage);
+  $("s-shortcut-edit").addEventListener("click", openShortcutPage);
 
   chrome.storage.onChanged.addListener(render);
 }

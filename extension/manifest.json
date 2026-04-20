@@ -4,6 +4,15 @@
   "version": "1.1.0",
   "description": "Track how much money you earn while procrastinating on YouTube, Instagram, TikTok, X, Reddit, and Facebook.",
   "permissions": ["storage", "tabs", "alarms", "idle"],
+  "commands": {
+    "wb-escape": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
+      },
+      "description": "Escape time-waster sites and jump to your focus URL"
+    }
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

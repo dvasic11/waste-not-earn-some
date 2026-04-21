@@ -260,7 +260,17 @@ async function render() {
   const { settings, state } = await getAll();
   const today = getTodayStats(state);
 
-  $("today-amount").textContent = fmtMoney(today.earnings, settings.currency);
+  const amountText = fmtMoney(today.earnings, settings.currency);
+  const amountEl = $("today-amount");
+  if (amountText !== prevAmountText) {
+    amountEl.textContent = amountText;
+    if (prevAmountText !== "") {
+      amountEl.classList.remove("bounce");
+      void amountEl.offsetWidth;
+      amountEl.classList.add("bounce");
+    }
+    prevAmountText = amountText;
+  }
   $("today-time").textContent = fmtTime(today.seconds);
   $("cum-amount").textContent = fmtMoney(state.cumulativeEarnings, settings.currency);
   $("cum-time").textContent = fmtTime(state.cumulativeSeconds);
@@ -274,6 +284,8 @@ async function render() {
   $("gauge-fg").setAttribute("stroke-dashoffset", String(GAUGE_LEN * (1 - pct / 100)));
   const angle = -90 + (180 * pct) / 100;
   $("needle").setAttribute("transform", `rotate(${angle} 100 110)`);
+
+  applyTier(pct);
 
   let status = "Idle — not in working hours or no time-waster open";
   if (state.onBreak) status = "☕ On break — every second still counts";

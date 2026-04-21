@@ -31,6 +31,8 @@ export const DEFAULTS = {
     streak: 0,
     // last day counted for streak (YYYY-MM-DD), to avoid double counting
     streakLastDay: null,
+    // milestones notified for the current day: { "YYYY-MM-DD": [25,50,75,100] }
+    milestones: {},
     // override
     onBreak: false,
     // last tick we accounted for, ms since epoch

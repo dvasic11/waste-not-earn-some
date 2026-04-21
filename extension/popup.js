@@ -1,10 +1,118 @@
 import { getAll, setSettings, setState, getTodayStats, getLastNDays, DEFAULTS } from "./storage.js";
+import { isWithinWorkingHours } from "./tracker.js";
 
 const $ = (id) => document.getElementById(id);
 const GAUGE_LEN = 251.3;
 let timer = null;
 let saveDebounce = null;
 let prevStreak = 0;
+let prevTier = -1;
+let prevAmountText = "";
+let particlesActive = false;
+let celebrationActive = false;
+let toastTimer = null;
+
+// ---------- Tier progression ----------
+function getTier(pct) {
+  if (pct >= 100) return 4;
+  if (pct >= 75) return 3;
+  if (pct >= 50) return 2;
+  if (pct >= 25) return 1;
+  return 0;
+}
+
+function showToast(msg, ms = 2600) {
+  const t = $("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("visible"), ms);
+}
+
+// Particles: lazy-spawn floating coins (tier 2+)
+function startParticles() {
+  if (particlesActive) return;
+  particlesActive = true;
+  const root = $("particles");
+  if (!root) return;
+  const spawn = () => {
+    if (!particlesActive) return;
+    const tier = Number($("app").dataset.tier) || 0;
+    if (tier < 2) { particlesActive = false; root.innerHTML = ""; return; }
+    const coin = document.createElement("div");
+    coin.className = "coin";
+    coin.textContent = ["💸", "💰", "🪙", "✨"][Math.floor(Math.random() * 4)];
+    coin.style.left = `${Math.random() * 90 + 5}%`;
+    const dur = 4 + Math.random() * 4;
+    coin.style.animationDuration = `${dur}s`;
+    coin.style.fontSize = `${12 + Math.random() * 10}px`;
+    root.appendChild(coin);
+    setTimeout(() => coin.remove(), dur * 1000 + 200);
+    const nextIn = tier >= 3 ? 450 + Math.random() * 400 : 900 + Math.random() * 700;
+    setTimeout(spawn, nextIn);
+  };
+  spawn();
+}
+function stopParticles() {
+  particlesActive = false;
+  const root = $("particles");
+  if (root) root.innerHTML = "";
+}
+
+// Celebration: confetti burst when hitting 100%
+function fireCelebration() {
+  if (celebrationActive) return;
+  celebrationActive = true;
+  const c = window.confetti;
+  if (typeof c === "function") {
+    const shoot = (delay) => setTimeout(() => {
+      c({
+        particleCount: 60,
+        spread: 70,
+        startVelocity: 35,
+        origin: { y: 0.3 },
+        colors: ["#f59e0b", "#ef4444", "#22c55e", "#fde68a", "#f8fafc"],
+        disableForReducedMotion: true,
+      });
+    }, delay);
+    shoot(0); shoot(250); shoot(550);
+  }
+  showToast("🎉 GOAL COMPLETE", 3200);
+  setTimeout(() => { celebrationActive = false; }, 3500);
+}
+
+function tierUpFlash(tier) {
+  const app = $("app");
+  if (!app) return;
+  app.classList.remove("tier-up");
+  void app.offsetWidth;
+  app.classList.add("tier-up");
+  setTimeout(() => app.classList.remove("tier-up"), 600);
+  const msgs = {
+    1: "You've entered the game 💸",
+    2: "Level up. This is getting expensive 👀",
+    3: "Combo mode activated 🔥",
+    4: "You win. You just got paid for nothing 🎉",
+  };
+  if (msgs[tier]) showToast(msgs[tier]);
+}
+
+function applyTier(pct) {
+  const tier = getTier(pct);
+  const app = $("app");
+  if (!app) return;
+  if (tier !== prevTier) {
+    app.dataset.tier = String(tier);
+    if (prevTier !== -1 && tier > prevTier) {
+      tierUpFlash(tier);
+      if (tier === 4) fireCelebration();
+    }
+    if (tier >= 2) startParticles();
+    else stopParticles();
+    prevTier = tier;
+  }
+}
 
 function fmtMoney(n, cur = "$") {
   return `${cur}${(n || 0).toFixed(2)}`;

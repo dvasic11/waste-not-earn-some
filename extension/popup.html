@@ -13,7 +13,7 @@
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
       <header class="head">
         <div class="brand">
-          <span class="logo">💸</span>
+          <span class="logo" id="logo">💸</span>
           <span class="brand-name">WasteBucks</span>
         </div>
         <div class="head-right">
@@ -80,6 +80,7 @@
 
         <div class="actions">
           <button id="break-btn" class="btn btn-warn">☕ Take a break</button>
+          <button id="panic-btn" class="btn btn-panic" title="Jump instantly to your focus site">🚀 Panic Button</button>
         </div>
 
         <div class="stats">
@@ -98,12 +99,12 @@
         </div>
 
         <div class="section-block">
-          <div class="section-title">Last 7 days</div>
+          <div class="section-title">Last 7 days — progress tiles</div>
           <div id="history" class="history" aria-label="7-day history"></div>
         </div>
 
         <div class="section-block">
-          <div class="section-title">Top time-wasters</div>
+          <div class="section-title">🎯 Top Enemies — biggest distractions</div>
           <div id="leaderboard" class="leaderboard"></div>
         </div>
       </section>
@@ -135,21 +136,24 @@
           <input id="s-domains" type="text" placeholder="youtube.com, instagram.com" />
           <span class="err" id="err-domains"></span>
         </label>
-        <label>Escape redirect URL
+        <div class="panic-explainer">
+          <div class="panic-title">🚀 Panic Button</div>
+          <div class="panic-sub">One tap (or one shortcut) teleports you away from time-waster sites.</div>
+        </div>
+        <label>Where should we send you?
           <input id="s-redirect" type="text" placeholder="gmail.com" autocomplete="off" />
-          <span class="muted small">No <code>https://</code> needed — we'll add it for you.</span>
-          <span class="muted small">Press <strong>Ctrl+Shift+X</strong> (Mac: <strong>⌘+Shift+X</strong>) on a tracked site to instantly jump here.</span>
+          <span class="muted small">Just type a website — e.g. <code>gmail.com</code>, <code>notion.so</code>, or <code>calendar.google.com</code>. No <code>https://</code> needed.</span>
           <span class="err" id="err-redirect"></span>
         </label>
-        <label>Escape shortcut
+        <label>Keyboard shortcut
           <div class="shortcut-row">
-            <button type="button" id="s-shortcut" class="shortcut-btn" title="Click then press your key combo">
+            <button type="button" id="s-shortcut" class="shortcut-btn" title="Current shortcut">
               <span id="s-shortcut-display">Ctrl+Shift+X</span>
             </button>
-            <button type="button" id="s-shortcut-edit" class="btn-link">Change in Chrome</button>
+            <button type="button" id="s-shortcut-edit" class="btn-link">Change</button>
           </div>
-          <span class="muted small">Default: <strong>Ctrl+Shift+X</strong> (Mac: <strong>⌘+Shift+X</strong>). Click <strong>Change in Chrome</strong> to rebind — Chrome requires this for security.</span>
-          <span class="muted small warn-note">⚠️ On the Chrome shortcuts page, only edit the row labeled <strong>“Escape time-waster sites…”</strong>. Do <strong>not</strong> change <em>Activate the extension</em> — that's how you open this popup.</span>
+          <span class="muted small"><strong>Default:</strong> Ctrl+Shift+X (Mac: ⌘+Shift+X). Press it on any tracked site to escape instantly.</span>
+          <span class="muted small warn-note">⚠️ On Chrome's shortcut page, <strong>only change the "Escape time-waster sites" row</strong>. Don't touch "Activate the extension" — that's what opens this popup.</span>
         </label>
         <div id="save-status" class="save-status"></div>
         <div class="actions stacked">

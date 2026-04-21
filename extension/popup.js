@@ -436,7 +436,17 @@ async function init() {
   $("settings-back").addEventListener("click", () => showSettings(false));
 
   $("break-btn").addEventListener("click", async () => {
-    const { state } = await getAll();
+    const { settings, state } = await getAll();
+    const inWork = isWithinWorkingHours(new Date(), settings.workStart, settings.workEnd);
+    // If already on break, always allow turning it off.
+    if (!state.onBreak && !inWork) {
+      const btn = $("break-btn");
+      btn.classList.remove("shake");
+      void btn.offsetWidth;
+      btn.classList.add("shake");
+      showToast("🚫 You can't take a break outside working hours");
+      return;
+    }
     await setState({ onBreak: !state.onBreak, lastTickMs: Date.now() });
     render();
   });

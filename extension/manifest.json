@@ -3,7 +3,7 @@
   "name": "WasteBucks — Money Earned While Wasting Time",
   "version": "1.1.0",
   "description": "Track how much money you earn while procrastinating on YouTube, Instagram, TikTok, X, Reddit, and Facebook.",
-  "permissions": ["storage", "tabs", "alarms", "idle"],
+  "permissions": ["storage", "tabs", "alarms", "idle", "notifications"],
   "commands": {
     "wb-escape": {
       "suggested_key": {

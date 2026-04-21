@@ -12,6 +12,27 @@ const TICK_SECONDS = 5;
 // Cap a single delta to avoid huge jumps when the SW was suspended for hours.
 const MAX_DELTA_SECONDS = 60;
 
+const MILESTONES = [25, 50, 75, 100];
+const MILESTONE_MSG = {
+  25: { title: "You've entered the game 💸", msg: "25% of your daily waste goal — nice start." },
+  50: { title: "Level up 👀", msg: "50% there. This is getting expensive." },
+  75: { title: "Combo mode activated 🔥", msg: "75% — you're on a roll. Keep going." },
+  100: { title: "You win 🎉", msg: "You just got paid for nothing. Goal complete!" },
+};
+
+function fireMilestoneNotification(pct) {
+  if (!chrome.notifications?.create) return;
+  const m = MILESTONE_MSG[pct];
+  if (!m) return;
+  chrome.notifications.create(`wb-milestone-${pct}-${Date.now()}`, {
+    type: "basic",
+    iconUrl: "icon-128.png",
+    title: m.title,
+    message: m.msg,
+    priority: 1,
+  });
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(["settings", "state"]);
   // Backward compat: merge defaults so new fields appear without wiping old data.
@@ -98,6 +119,19 @@ async function tick() {
       let streakLastDay = state.streakLastDay || null;
       const goal = Number(settings.dailyGoal) || 0;
       const newToday = daily[k];
+      // Milestones — fire once per day per threshold.
+      const milestones = { ...(state.milestones || {}) };
+      const hit = new Set(milestones[k] || []);
+      if (goal > 0) {
+        const pct = (newToday.earnings / goal) * 100;
+        for (const m of MILESTONES) {
+          if (pct >= m && !hit.has(m)) {
+            hit.add(m);
+            fireMilestoneNotification(m);
+          }
+        }
+      }
+      milestones[k] = [...hit];
       if (goal > 0 && newToday.earnings >= goal && streakLastDay !== k) {
         // Only continue the streak if yesterday also hit the goal (or no prior day yet).
         const y = new Date(now);
@@ -115,6 +149,7 @@ async function tick() {
         cumulativeEarnings: state.cumulativeEarnings + earned,
         daily,
         domains,
+        milestones,
         streak,
         streakLastDay,
         activeDomain,

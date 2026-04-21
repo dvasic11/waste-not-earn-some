@@ -5,7 +5,109 @@ body {
   color: #f8fafc;
   overflow-x: hidden;
 }
-.app { padding: 16px; }
+.app { padding: 16px; position: relative; overflow: hidden; transition: background 0.5s ease; }
+
+/* ---------- Tier system ---------- */
+.app[data-tier="1"] { background: radial-gradient(600px 300px at 50% -40%, rgba(34,197,94,0.10), transparent 70%); }
+.app[data-tier="2"] { background: radial-gradient(600px 300px at 50% -40%, rgba(234,179,8,0.14), transparent 70%); }
+.app[data-tier="3"] {
+  background: radial-gradient(600px 300px at 50% -40%, rgba(249,115,22,0.18), transparent 70%);
+}
+.app[data-tier="4"] {
+  background:
+    radial-gradient(600px 300px at 50% -20%, rgba(239,68,68,0.22), transparent 70%),
+    radial-gradient(400px 300px at 50% 120%, rgba(245,158,11,0.18), transparent 70%);
+  animation: tier4-waves 4s ease-in-out infinite;
+}
+@keyframes tier4-waves {
+  0%,100% { filter: hue-rotate(0deg) brightness(1); }
+  50% { filter: hue-rotate(-8deg) brightness(1.08); }
+}
+
+/* Tier transition flash */
+.app.tier-up::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(400px 200px at 50% 30%, rgba(255,255,255,0.35), transparent 70%);
+  animation: tier-up-flash 500ms ease-out forwards;
+  z-index: 5;
+}
+@keyframes tier-up-flash {
+  0% { opacity: 0; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+/* ---------- Counter bounce ---------- */
+.amount.bounce { animation: counter-bounce 220ms ease-out; }
+@keyframes counter-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Tier 3+ combo glow on counter */
+.app[data-tier="3"] .amount,
+.app[data-tier="4"] .amount {
+  filter: drop-shadow(0 0 10px rgba(249,115,22,0.45));
+  animation: combo-pulse 1.6s ease-in-out infinite;
+}
+@keyframes combo-pulse {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(249,115,22,0.35)); }
+  50% { filter: drop-shadow(0 0 18px rgba(239,68,68,0.65)); }
+}
+
+/* ---------- Floating particles (tier 2+) ---------- */
+.particles { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.particles .coin {
+  position: absolute; font-size: 14px; opacity: 0;
+  animation: float-up linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+@keyframes float-up {
+  0% { transform: translateY(110%) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.85; }
+  90% { opacity: 0.85; }
+  100% { transform: translateY(-20%) rotate(360deg); opacity: 0; }
+}
+
+/* ---------- Celebration (tier 4) ---------- */
+.celebration { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.celebration canvas { width: 100%; height: 100%; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%) translateY(-30px);
+  background: linear-gradient(135deg, #1f2937, #0f172a);
+  border: 1px solid rgba(245,158,11,0.5);
+  color: #fde68a; padding: 8px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  opacity: 0; pointer-events: none; z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Button shake (invalid break) ---------- */
+.btn.shake { animation: btn-shake 180ms ease-in-out; }
+@keyframes btn-shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-3px); }
+}
+
+/* ---------- Header shine ---------- */
+.brand-name {
+  background: linear-gradient(90deg, #fef3c7 0%, #fbbf24 30%, #f8fafc 50%, #fbbf24 70%, #fef3c7 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shine 4s ease-in-out infinite;
+}
+@keyframes shine {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .brand { display: flex; align-items: center; gap: 8px; }
 .logo { font-size: 20px; }

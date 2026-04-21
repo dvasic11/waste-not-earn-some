@@ -491,25 +491,6 @@ async function init() {
     render();
   });
 
-  // Panic Button — instant teleport to focus URL with flash animation
-  $("panic-btn").addEventListener("click", async () => {
-    const { settings } = await getAll();
-    let target = settings.redirectUrl || "https://mail.google.com";
-    if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
-    const app = $("app");
-    app.classList.remove("teleport");
-    void app.offsetWidth;
-    app.classList.add("teleport");
-    showToast("🚀 Teleporting…", 1200);
-    setTimeout(() => {
-      chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-        const tab = tabs[0];
-        if (tab && tab.id) chrome.tabs.update(tab.id, { url: target });
-      });
-      setTimeout(() => app.classList.remove("teleport"), 300);
-    }, 280);
-  });
-
   // Live validation + debounced auto-save on every input change.
   ["s-rate", "s-start", "s-end", "s-goal", "s-domains", "s-redirect"].forEach((id) => {
     $(id).addEventListener("input", () => {

@@ -370,8 +370,31 @@ function renderHistory(state, settings) {
     requestAnimationFrame(() => { liquid.style.height = `${fill}%`; });
     el.querySelector(".day-label").textContent = d.label;
     el.querySelector(".day-pct").textContent = `${Math.round(d.pct)}%`;
-    el.title = `${d.key} — ${fmtMoney(d.earnings, settings.currency)} (${Math.round(d.pct)}% of goal)`;
+    const playful = d.pct >= 100
+      ? "🏆 Goal smashed!"
+      : d.pct >= 75
+        ? "You almost made it 😬"
+        : d.pct >= 40
+          ? "Decent waste 💸"
+          : d.pct > 0
+            ? "Rookie numbers 😴"
+            : "Nothing tracked";
+    el.title = `${d.key} — ${fmtMoney(d.earnings, settings.currency)} (${Math.round(d.pct)}% of goal)\n${playful}`;
     el.classList.toggle("today", d.key === todayKey);
+    el.classList.toggle("completed", d.pct >= 100);
+    el.classList.toggle("near", d.pct >= 75 && d.pct < 100);
+    // Star/checkmark overlay on completed days
+    let star = el.querySelector(".day-star");
+    if (d.pct >= 100) {
+      if (!star) {
+        star = document.createElement("div");
+        star.className = "day-star";
+        star.textContent = "⭐";
+        el.appendChild(star);
+      }
+    } else if (star) {
+      star.remove();
+    }
   });
 }
 
@@ -382,23 +405,40 @@ function renderLeaderboard(state, settings) {
     .sort((a, b) => b.earnings - a.earnings)
     .slice(0, 5);
   if (entries.length === 0) {
-    root.innerHTML = `<div class="lb-empty">No tracked time yet — visit a tracked site during work hours.</div>`;
+    root.innerHTML = `<div class="lb-empty">No enemies yet 🎯 — visit a tracked site during work hours.</div>`;
     return;
   }
   const max = entries[0].earnings || 1;
+  const medals = ["🥇", "🥈", "🥉"];
+  const taglines = ["#1 Time Thief", "Runner-up distraction", "Bronze procrastinator"];
   root.innerHTML = entries
-    .map((e) => {
+    .map((e, i) => {
       const pct = Math.min(100, (e.earnings / max) * 100);
+      const rank = i < 3 ? medals[i] : `#${i + 1}`;
+      const rankClass = i < 3 ? `rank-${i + 1}` : "";
+      const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(e.domain)}&sz=32`;
+      const tagline = i < 3 ? `<span class="lb-tagline">${taglines[i]}</span>` : "";
       return `
-        <div class="lb-row">
-          <div class="lb-bar" style="width:${pct}%"></div>
+        <div class="lb-row ${rankClass}">
+          <div class="lb-bar" style="width:0%" data-target="${pct}"></div>
           <div class="lb-content">
-            <span class="lb-domain">${e.domain}</span>
+            <span class="lb-left">
+              <span class="lb-rank">${rank}</span>
+              <img class="lb-favicon" src="${favicon}" alt="" onerror="this.style.display='none'" />
+              <span class="lb-domain">${e.domain}</span>
+              ${tagline}
+            </span>
             <span class="lb-meta">${fmtMoney(e.earnings, settings.currency)} · ${fmtTime(e.seconds)}</span>
           </div>
         </div>`;
     })
     .join("");
+  // Animate bars growing from 0 -> target
+  requestAnimationFrame(() => {
+    root.querySelectorAll(".lb-bar").forEach((bar) => {
+      bar.style.width = `${bar.dataset.target}%`;
+    });
+  });
 }
 
 function showSettings(show) {
@@ -449,6 +489,25 @@ async function init() {
     }
     await setState({ onBreak: !state.onBreak, lastTickMs: Date.now() });
     render();
+  });
+
+  // Panic Button — instant teleport to focus URL with flash animation
+  $("panic-btn").addEventListener("click", async () => {
+    const { settings } = await getAll();
+    let target = settings.redirectUrl || "https://mail.google.com";
+    if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
+    const app = $("app");
+    app.classList.remove("teleport");
+    void app.offsetWidth;
+    app.classList.add("teleport");
+    showToast("🚀 Teleporting…", 1200);
+    setTimeout(() => {
+      chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+        const tab = tabs[0];
+        if (tab && tab.id) chrome.tabs.update(tab.id, { url: target });
+      });
+      setTimeout(() => app.classList.remove("teleport"), 300);
+    }, 280);
   });
 
   // Live validation + debounced auto-save on every input change.

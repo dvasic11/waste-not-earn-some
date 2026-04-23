@@ -379,6 +379,9 @@ async function render() {
       amountEl.classList.remove("bounce");
       void amountEl.offsetWidth;
       amountEl.classList.add("bounce");
+      // Tiny splash on every earnings change — main "reward hit".
+      // Tier 0 stays subtle (just bounce); tier 1+ adds particles.
+      if (getCurrentTier() >= 1) cashSplash(0);
     }
     prevAmountText = amountText;
   }

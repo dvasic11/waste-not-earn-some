@@ -184,17 +184,18 @@ function startParticles() {
   if (orbsTimer) return;
   const orbInterval = () => {
     const tier = getCurrentTier();
-    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 220 : tier >= 1 ? 350 : 550;
+    // Tier 2 intentionally slow + sparse — calm "engagement" feel.
+    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 900 : tier >= 1 ? 350 : 550;
   };
   const coinInterval = () => {
     const tier = getCurrentTier();
     if (tier < 1) return 99999;
-    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 500 : 950;
+    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 1800 : 950;
   };
   const billInterval = () => {
     const tier = getCurrentTier();
     if (tier < 2) return 99999;
-    return tier >= 4 ? 220 : tier >= 3 ? 380 : 700;
+    return tier >= 4 ? 220 : tier >= 3 ? 380 : 2200;
   };
   const gemInterval = () => {
     const tier = getCurrentTier();

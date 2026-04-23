@@ -5,23 +5,89 @@ body {
   color: #f8fafc;
   overflow-x: hidden;
 }
-.app { padding: 16px; position: relative; overflow: hidden; transition: background 0.5s ease; }
-
-/* ---------- Tier system ---------- */
-.app[data-tier="1"] { background: radial-gradient(600px 300px at 50% -40%, rgba(34,197,94,0.10), transparent 70%); }
-.app[data-tier="2"] { background: radial-gradient(600px 300px at 50% -40%, rgba(234,179,8,0.14), transparent 70%); }
-.app[data-tier="3"] {
-  background: radial-gradient(600px 300px at 50% -40%, rgba(249,115,22,0.18), transparent 70%);
+.app {
+  padding: 16px; position: relative; overflow: hidden;
+  transition: background 0.6s ease, filter 0.6s ease;
 }
-.app[data-tier="4"] {
+
+/* =========================================================
+   LAYERED TIER SYSTEM — additive, never subtractive.
+   Each tier ADDS new visual layers on top of the previous.
+   ========================================================= */
+
+/* ---------- Layer 0: animated background gradient (ALL tiers, including 0) ---------- */
+.app::before {
+  content: ""; position: absolute; inset: -20%; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(600px 300px at 50% -20%, rgba(239,68,68,0.22), transparent 70%),
-    radial-gradient(400px 300px at 50% 120%, rgba(245,158,11,0.18), transparent 70%);
-  animation: tier4-waves 4s ease-in-out infinite;
+    radial-gradient(500px 320px at 30% 10%, rgba(99,102,241,0.10), transparent 60%),
+    radial-gradient(500px 320px at 70% 90%, rgba(34,197,94,0.08), transparent 60%);
+  animation: bg-drift 14s ease-in-out infinite alternate;
+  transition: opacity 0.6s ease, filter 0.6s ease;
+  opacity: 0.9;
+}
+@keyframes bg-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(2%, -1%) scale(1.04); }
+  100% { transform: translate(-2%, 1%) scale(1.02); }
+}
+/* keep dashboard content above the bg layer */
+.app > * { position: relative; z-index: 2; }
+.app > .particles { z-index: 1; }
+
+/* Tier 1+ : warmer overlay + faster drift */
+.app[data-tier="1"]::before,
+.app[data-tier="2"]::before,
+.app[data-tier="3"]::before,
+.app[data-tier="4"]::before {
+  background:
+    radial-gradient(500px 320px at 30% 10%, rgba(34,197,94,0.16), transparent 60%),
+    radial-gradient(500px 320px at 70% 90%, rgba(99,102,241,0.10), transparent 60%);
+  animation-duration: 11s;
+}
+/* Tier 2+ : richer saturation */
+.app[data-tier="2"]::before,
+.app[data-tier="3"]::before,
+.app[data-tier="4"]::before {
+  background:
+    radial-gradient(500px 320px at 30% 10%, rgba(234,179,8,0.20), transparent 60%),
+    radial-gradient(500px 320px at 70% 90%, rgba(34,197,94,0.14), transparent 60%);
+  animation-duration: 9s;
+}
+/* Tier 3+ : orange momentum */
+.app[data-tier="3"]::before,
+.app[data-tier="4"]::before {
+  background:
+    radial-gradient(500px 320px at 30% 10%, rgba(249,115,22,0.24), transparent 60%),
+    radial-gradient(500px 320px at 70% 90%, rgba(234,179,8,0.18), transparent 60%);
+  animation-duration: 7s;
+}
+/* Tier 4 : peak energy + global hue wave */
+.app[data-tier="4"] { animation: tier4-waves 4s ease-in-out infinite; }
+.app[data-tier="4"]::before {
+  background:
+    radial-gradient(500px 320px at 30% 10%, rgba(239,68,68,0.26), transparent 60%),
+    radial-gradient(500px 320px at 70% 90%, rgba(245,158,11,0.22), transparent 60%);
+  animation-duration: 5s;
 }
 @keyframes tier4-waves {
   0%,100% { filter: hue-rotate(0deg) brightness(1); }
   50% { filter: hue-rotate(-8deg) brightness(1.08); }
+}
+
+/* ---------- Layer 4: shimmer/energy-wave overlay (tier 4 only) ---------- */
+.app[data-tier="4"]::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(120deg,
+    transparent 0%, transparent 40%,
+    rgba(255,255,255,0.08) 50%,
+    transparent 60%, transparent 100%);
+  background-size: 250% 100%;
+  animation: shimmer-sweep 3.2s linear infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes shimmer-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -100% 0; }
 }
 
 /* Tier transition flash */
@@ -45,16 +111,51 @@ body {
   100% { transform: scale(1); }
 }
 
-/* Tier 3+ combo glow on counter */
+/* Tier 1+ : subtle counter glow */
+.app[data-tier="1"] .amount,
+.app[data-tier="2"] .amount,
+.app[data-tier="3"] .amount,
+.app[data-tier="4"] .amount {
+  filter: drop-shadow(0 0 6px rgba(234,179,8,0.30));
+}
+/* Tier 2+ : stronger glow */
+.app[data-tier="2"] .amount,
+.app[data-tier="3"] .amount,
+.app[data-tier="4"] .amount {
+  filter: drop-shadow(0 0 10px rgba(245,158,11,0.45));
+}
+/* Tier 3+ : pulsing combo glow */
 .app[data-tier="3"] .amount,
 .app[data-tier="4"] .amount {
   filter: drop-shadow(0 0 10px rgba(249,115,22,0.45));
   animation: combo-pulse 1.6s ease-in-out infinite;
 }
+/* Tier 4 : peak shimmer on counter */
+.app[data-tier="4"] .amount {
+  filter: drop-shadow(0 0 14px rgba(239,68,68,0.6));
+  animation: combo-pulse 1.1s ease-in-out infinite;
+}
 @keyframes combo-pulse {
   0%,100% { filter: drop-shadow(0 0 8px rgba(249,115,22,0.35)); }
   50% { filter: drop-shadow(0 0 18px rgba(239,68,68,0.65)); }
 }
+
+/* ---------- Gauge tier enhancements (additive) ---------- */
+.app[data-tier="2"] #gauge-fg,
+.app[data-tier="3"] #gauge-fg,
+.app[data-tier="4"] #gauge-fg { filter: drop-shadow(0 0 4px rgba(245,158,11,0.6)); }
+.app[data-tier="3"] #gauge-fg,
+.app[data-tier="4"] #gauge-fg { filter: drop-shadow(0 0 8px rgba(249,115,22,0.7)); }
+.app[data-tier="4"] #gauge-fg {
+  filter: drop-shadow(0 0 12px rgba(239,68,68,0.8));
+  animation: gauge-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gauge-pulse {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(239,68,68,0.6)); }
+  50%     { filter: drop-shadow(0 0 16px rgba(239,68,68,0.9)); }
+}
+/* Tier 3+ : needle gets a subtle elastic micro-bounce on each render tick (transition only) */
+#needle { transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 /* ---------- Floating particles (tier 2+) ---------- */
 .particles { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }

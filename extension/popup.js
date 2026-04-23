@@ -39,17 +39,25 @@ function startParticles() {
   const spawn = () => {
     if (!particlesActive) return;
     const tier = Number($("app").dataset.tier) || 0;
-    if (tier < 2) { particlesActive = false; root.innerHTML = ""; return; }
+    if (tier < 1) { particlesActive = false; root.innerHTML = ""; return; }
     const coin = document.createElement("div");
     coin.className = "coin";
     coin.textContent = ["💸", "💰", "🪙", "✨"][Math.floor(Math.random() * 4)];
     coin.style.left = `${Math.random() * 90 + 5}%`;
-    const dur = 4 + Math.random() * 4;
+    // Tier scales speed: higher tier = faster floats
+    const baseDur = tier >= 4 ? 3 : tier >= 3 ? 3.5 : tier >= 2 ? 4.5 : 6;
+    const dur = baseDur + Math.random() * 3;
     coin.style.animationDuration = `${dur}s`;
-    coin.style.fontSize = `${12 + Math.random() * 10}px`;
+    coin.style.fontSize = `${(tier >= 3 ? 14 : 11) + Math.random() * 10}px`;
+    coin.style.opacity = tier >= 3 ? "1" : tier >= 2 ? "0.85" : "0.6";
     root.appendChild(coin);
     setTimeout(() => coin.remove(), dur * 1000 + 200);
-    const nextIn = tier >= 3 ? 450 + Math.random() * 400 : 900 + Math.random() * 700;
+    // Tier scales density: tier 1 is sparse, tier 4 is dense
+    const nextIn =
+      tier >= 4 ? 300 + Math.random() * 250 :
+      tier >= 3 ? 500 + Math.random() * 400 :
+      tier >= 2 ? 900 + Math.random() * 600 :
+                  1800 + Math.random() * 1200;
     setTimeout(spawn, nextIn);
   };
   spawn();
@@ -108,7 +116,7 @@ function applyTier(pct) {
       tierUpFlash(tier);
       if (tier === 4) fireCelebration();
     }
-    if (tier >= 2) startParticles();
+    if (tier >= 1) startParticles();
     else stopParticles();
     prevTier = tier;
   }

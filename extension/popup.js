@@ -30,42 +30,145 @@ function showToast(msg, ms = 2600) {
   toastTimer = setTimeout(() => t.classList.remove("visible"), ms);
 }
 
-// Particles: lazy-spawn floating coins (tier 2+)
-function startParticles() {
-  if (particlesActive) return;
-  particlesActive = true;
+// ---------- Multi-layer particle system ----------
+// Layer A: ambient orbs (ALL tiers, tier 0+) — soft pulsating dots across the whole app.
+// Layer B: floating coins (tier 1+) — emoji coins drifting upward.
+// Layer C: falling cash bills (tier 2+) — 💵 bills falling from the top with sway.
+// Layer D: cash splash bursts — triggered by earnings ticks and tier changes.
+let orbsTimer = null;
+let coinsTimer = null;
+let billsTimer = null;
+
+function getCurrentTier() {
+  return Number($("app").dataset.tier) || 0;
+}
+
+function spawnOrb() {
   const root = $("particles");
   if (!root) return;
-  const spawn = () => {
-    if (!particlesActive) return;
-    const tier = Number($("app").dataset.tier) || 0;
-    if (tier < 1) { particlesActive = false; root.innerHTML = ""; return; }
-    const coin = document.createElement("div");
-    coin.className = "coin";
-    coin.textContent = ["💸", "💰", "🪙", "✨"][Math.floor(Math.random() * 4)];
-    coin.style.left = `${Math.random() * 90 + 5}%`;
-    // Tier scales speed: higher tier = faster floats
-    const baseDur = tier >= 4 ? 3 : tier >= 3 ? 3.5 : tier >= 2 ? 4.5 : 6;
-    const dur = baseDur + Math.random() * 3;
-    coin.style.animationDuration = `${dur}s`;
-    coin.style.fontSize = `${(tier >= 3 ? 14 : 11) + Math.random() * 10}px`;
-    coin.style.opacity = tier >= 3 ? "1" : tier >= 2 ? "0.85" : "0.6";
-    root.appendChild(coin);
-    setTimeout(() => coin.remove(), dur * 1000 + 200);
-    // Tier scales density: tier 1 is sparse, tier 4 is dense
-    const nextIn =
-      tier >= 4 ? 300 + Math.random() * 250 :
-      tier >= 3 ? 500 + Math.random() * 400 :
-      tier >= 2 ? 900 + Math.random() * 600 :
-                  1800 + Math.random() * 1200;
-    setTimeout(spawn, nextIn);
-  };
-  spawn();
+  const tier = getCurrentTier();
+  const orb = document.createElement("div");
+  orb.className = "orb";
+  const size = 4 + Math.random() * (tier >= 3 ? 14 : tier >= 2 ? 10 : 7);
+  orb.style.width = `${size}px`;
+  orb.style.height = `${size}px`;
+  orb.style.left = `${Math.random() * 100}%`;
+  orb.style.top = `${Math.random() * 100}%`;
+  const dur = (tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 3.5 : tier >= 1 ? 4 : 5) + Math.random() * 2;
+  orb.style.animationDuration = `${dur}s`;
+  orb.style.setProperty("--dx", `${(Math.random() - 0.5) * 30}px`);
+  orb.style.setProperty("--dy", `${-10 - Math.random() * 30}px`);
+  // Color tint per tier
+  const tint = tier >= 4 ? "rgba(251,191,36,0.95)"
+              : tier >= 3 ? "rgba(251,191,36,0.85)"
+              : tier >= 2 ? "rgba(134,239,172,0.8)"
+              : tier >= 1 ? "rgba(165,180,252,0.75)"
+                          : "rgba(203,213,225,0.6)";
+  orb.style.background = `radial-gradient(circle at 30% 30%, ${tint}, transparent 70%)`;
+  const op = tier >= 4 ? 0.9 : tier >= 3 ? 0.75 : tier >= 2 ? 0.6 : tier >= 1 ? 0.5 : 0.35;
+  orb.style.setProperty("--orb-opacity", String(op));
+  root.appendChild(orb);
+  setTimeout(() => orb.remove(), dur * 1000 + 200);
 }
-function stopParticles() {
-  particlesActive = false;
+
+function spawnCoin() {
   const root = $("particles");
-  if (root) root.innerHTML = "";
+  if (!root) return;
+  const tier = getCurrentTier();
+  if (tier < 1) return;
+  const coin = document.createElement("div");
+  coin.className = "coin";
+  const symbols = tier >= 3 ? ["💰", "💸", "🪙", "💵", "✨"]
+                : tier >= 2 ? ["💸", "💰", "🪙", "✨"]
+                            : ["✨", "🪙", "💸"];
+  coin.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+  coin.style.left = `${Math.random() * 90 + 5}%`;
+  const baseDur = tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 4 : 5;
+  const dur = baseDur + Math.random() * 2;
+  coin.style.animationDuration = `${dur}s`;
+  coin.style.fontSize = `${(tier >= 3 ? 14 : 11) + Math.random() * 10}px`;
+  coin.style.opacity = tier >= 3 ? "1" : tier >= 2 ? "0.9" : "0.7";
+  root.appendChild(coin);
+  setTimeout(() => coin.remove(), dur * 1000 + 200);
+}
+
+function spawnBill() {
+  const root = $("particles");
+  if (!root) return;
+  const tier = getCurrentTier();
+  if (tier < 2) return;
+  const bill = document.createElement("div");
+  bill.className = "bill";
+  bill.textContent = ["💵", "💴", "💶", "💷"][Math.floor(Math.random() * 4)];
+  bill.style.left = `${Math.random() * 95}%`;
+  bill.style.fontSize = `${14 + Math.random() * (tier >= 4 ? 14 : 8)}px`;
+  const dur = (tier >= 4 ? 3 : tier >= 3 ? 4 : 5) + Math.random() * 2;
+  bill.style.animationDuration = `${dur}s`;
+  bill.style.setProperty("--sway", `${(Math.random() - 0.5) * 80}px`);
+  root.appendChild(bill);
+  setTimeout(() => bill.remove(), dur * 1000 + 200);
+}
+
+// Cash splash burst — quick radial spray from the counter.
+// Lightweight: 6-12 pieces depending on tier.
+function cashSplash(intensity = 1) {
+  const tier = getCurrentTier();
+  const amountEl = $("today-amount");
+  if (!amountEl) return;
+  const rect = amountEl.getBoundingClientRect();
+  const appRect = $("app").getBoundingClientRect();
+  const cx = rect.left - appRect.left + rect.width / 2;
+  const cy = rect.top - appRect.top + rect.height / 2;
+  const burst = document.createElement("div");
+  burst.className = "splash";
+  burst.style.left = `${cx}px`;
+  burst.style.top = `${cy}px`;
+  const count = Math.min(14, 4 + tier * 2 + intensity * 2);
+  const symbols = tier >= 3 ? ["💵", "💰", "🪙", "✨"] : tier >= 1 ? ["🪙", "✨", "💸"] : ["✨"];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("div");
+    piece.className = "splash-piece";
+    piece.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+    const dist = 40 + Math.random() * (40 + tier * 15);
+    piece.style.setProperty("--sx", `${Math.cos(angle) * dist}px`);
+    piece.style.setProperty("--sy", `${Math.sin(angle) * dist}px`);
+    piece.style.setProperty("--sr", `${(Math.random() - 0.5) * 540}deg`);
+    piece.style.fontSize = `${12 + Math.random() * 8}px`;
+    burst.appendChild(piece);
+  }
+  $("app").appendChild(burst);
+  setTimeout(() => burst.remove(), 700);
+}
+
+function startParticles() {
+  // Ambient orbs always on. Other layers self-gate by tier inside spawn fn.
+  if (orbsTimer) return;
+  const orbInterval = () => {
+    const tier = getCurrentTier();
+    return tier >= 4 ? 180 : tier >= 3 ? 250 : tier >= 2 ? 350 : tier >= 1 ? 500 : 700;
+  };
+  const coinInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 1) return 99999;
+    return tier >= 4 ? 280 : tier >= 3 ? 450 : tier >= 2 ? 800 : 1500;
+  };
+  const billInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 2) return 99999;
+    return tier >= 4 ? 350 : tier >= 3 ? 600 : 1000;
+  };
+  const loop = (fn, getDelay) => {
+    const tick = () => {
+      fn();
+      setTimeout(tick, getDelay() + Math.random() * 200);
+    };
+    tick();
+  };
+  loop(spawnOrb, orbInterval);
+  loop(spawnCoin, coinInterval);
+  loop(spawnBill, billInterval);
+  orbsTimer = coinsTimer = billsTimer = true;
 }
 
 // Celebration: confetti burst when hitting 100%
@@ -114,10 +217,10 @@ function applyTier(pct) {
     app.dataset.tier = String(tier);
     if (prevTier !== -1 && tier > prevTier) {
       tierUpFlash(tier);
+      // Big cash splash on tier-up — instant feedback.
+      cashSplash(tier);
       if (tier === 4) fireCelebration();
     }
-    if (tier >= 1) startParticles();
-    else stopParticles();
     prevTier = tier;
   }
 }
@@ -276,6 +379,9 @@ async function render() {
       amountEl.classList.remove("bounce");
       void amountEl.offsetWidth;
       amountEl.classList.add("bounce");
+      // Tiny splash on every earnings change — main "reward hit".
+      // Tier 0 stays subtle (just bounce); tier 1+ adds particles.
+      if (getCurrentTier() >= 1) cashSplash(0);
     }
     prevAmountText = amountText;
   }
@@ -471,6 +577,8 @@ function showSettings(show) {
 
 async function init() {
   await render();
+  // Kick off ambient particle system immediately — alive even at tier 0.
+  startParticles();
   chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());
   timer = setInterval(() => {
     chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());

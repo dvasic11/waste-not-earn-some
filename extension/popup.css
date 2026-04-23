@@ -93,6 +93,33 @@ body {
   100% { transform: translateY(110vh) translateX(calc(var(--sway, 20px) * -1)) rotate(360deg); opacity: 0; }
 }
 
+/* Diamonds & gems (tier 4) — sparkly twinkling stones */
+.particles .gem {
+  position: absolute; top: -30px; font-size: 20px;
+  animation: gem-fall linear infinite;
+  filter: drop-shadow(0 0 6px rgba(186,230,253,0.95)) drop-shadow(0 0 12px rgba(244,114,182,0.6));
+  opacity: 0;
+}
+@keyframes gem-fall {
+  0%   { transform: translateY(-30px) translateX(0) rotate(0deg) scale(0.6); opacity: 0; }
+  8%   { opacity: 1; transform: translateY(5vh) translateX(0) rotate(45deg) scale(1.1); }
+  50%  { transform: translateY(50vh) translateX(var(--sway, 30px)) rotate(180deg) scale(1); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(115vh) translateX(calc(var(--sway, 30px) * -1)) rotate(540deg) scale(0.8); opacity: 0; }
+}
+
+/* Sparkle pop — tiny twinkling stars layered everywhere on tier 3+ */
+.particles .sparkle {
+  position: absolute; pointer-events: none;
+  animation: sparkle-twinkle ease-in-out forwards;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.9));
+}
+@keyframes sparkle-twinkle {
+  0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+  50%  { transform: scale(1.3) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
 /* Cash splash burst (triggered on earnings tick / tier change) */
 .splash {
   position: absolute; top: 50%; left: 50%; pointer-events: none; z-index: 4;

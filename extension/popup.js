@@ -49,7 +49,7 @@ function spawnOrb() {
   const tier = getCurrentTier();
   const orb = document.createElement("div");
   orb.className = "orb";
-  const size = 4 + Math.random() * (tier >= 3 ? 14 : tier >= 2 ? 10 : 7);
+  const size = 4 + Math.random() * (tier >= 4 ? 22 : tier >= 3 ? 16 : tier >= 2 ? 12 : tier >= 1 ? 9 : 7);
   orb.style.width = `${size}px`;
   orb.style.height = `${size}px`;
   orb.style.left = `${Math.random() * 100}%`;
@@ -65,10 +65,44 @@ function spawnOrb() {
               : tier >= 1 ? "rgba(165,180,252,0.75)"
                           : "rgba(203,213,225,0.6)";
   orb.style.background = `radial-gradient(circle at 30% 30%, ${tint}, transparent 70%)`;
-  const op = tier >= 4 ? 0.9 : tier >= 3 ? 0.75 : tier >= 2 ? 0.6 : tier >= 1 ? 0.5 : 0.35;
+  const op = tier >= 4 ? 1 : tier >= 3 ? 0.85 : tier >= 2 ? 0.7 : tier >= 1 ? 0.55 : 0.4;
   orb.style.setProperty("--orb-opacity", String(op));
   root.appendChild(orb);
   setTimeout(() => orb.remove(), dur * 1000 + 200);
+}
+
+function spawnGem() {
+  const root = $("particles");
+  if (!root) return;
+  const tier = getCurrentTier();
+  if (tier < 4) return;
+  const gem = document.createElement("div");
+  gem.className = "gem";
+  gem.textContent = ["💎", "💍", "👑", "💎", "💎"][Math.floor(Math.random() * 5)];
+  gem.style.left = `${Math.random() * 95}%`;
+  gem.style.fontSize = `${18 + Math.random() * 14}px`;
+  const dur = 3 + Math.random() * 2;
+  gem.style.animationDuration = `${dur}s`;
+  gem.style.setProperty("--sway", `${(Math.random() - 0.5) * 100}px`);
+  root.appendChild(gem);
+  setTimeout(() => gem.remove(), dur * 1000 + 200);
+}
+
+function spawnSparkle() {
+  const root = $("particles");
+  if (!root) return;
+  const tier = getCurrentTier();
+  if (tier < 3) return;
+  const sp = document.createElement("div");
+  sp.className = "sparkle";
+  sp.textContent = ["✨", "⭐", "💫", "✦"][Math.floor(Math.random() * 4)];
+  sp.style.left = `${Math.random() * 100}%`;
+  sp.style.top = `${Math.random() * 100}%`;
+  sp.style.fontSize = `${10 + Math.random() * 14}px`;
+  const dur = 0.8 + Math.random() * 0.8;
+  sp.style.animationDuration = `${dur}s`;
+  root.appendChild(sp);
+  setTimeout(() => sp.remove(), dur * 1000 + 100);
 }
 
 function spawnCoin() {
@@ -78,7 +112,8 @@ function spawnCoin() {
   if (tier < 1) return;
   const coin = document.createElement("div");
   coin.className = "coin";
-  const symbols = tier >= 3 ? ["💰", "💸", "🪙", "💵", "✨"]
+  const symbols = tier >= 4 ? ["💰", "💎", "💸", "🪙", "💵", "👑", "💍", "✨"]
+                : tier >= 3 ? ["💰", "💸", "🪙", "💵", "✨", "💎"]
                 : tier >= 2 ? ["💸", "💰", "🪙", "✨"]
                             : ["✨", "🪙", "💸"];
   coin.textContent = symbols[Math.floor(Math.random() * symbols.length)];
@@ -86,7 +121,7 @@ function spawnCoin() {
   const baseDur = tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 4 : 5;
   const dur = baseDur + Math.random() * 2;
   coin.style.animationDuration = `${dur}s`;
-  coin.style.fontSize = `${(tier >= 3 ? 14 : 11) + Math.random() * 10}px`;
+  coin.style.fontSize = `${(tier >= 4 ? 16 : tier >= 3 ? 14 : 11) + Math.random() * (tier >= 4 ? 14 : 10)}px`;
   coin.style.opacity = tier >= 3 ? "1" : tier >= 2 ? "0.9" : "0.7";
   root.appendChild(coin);
   setTimeout(() => coin.remove(), dur * 1000 + 200);
@@ -123,18 +158,21 @@ function cashSplash(intensity = 1) {
   burst.className = "splash";
   burst.style.left = `${cx}px`;
   burst.style.top = `${cy}px`;
-  const count = Math.min(14, 4 + tier * 2 + intensity * 2);
-  const symbols = tier >= 3 ? ["💵", "💰", "🪙", "✨"] : tier >= 1 ? ["🪙", "✨", "💸"] : ["✨"];
+  const count = Math.min(22, 6 + tier * 3 + intensity * 2);
+  const symbols = tier >= 4 ? ["💎", "💰", "💵", "🪙", "👑", "✨", "💍"]
+                : tier >= 3 ? ["💵", "💰", "🪙", "✨", "💎"]
+                : tier >= 1 ? ["🪙", "✨", "💸"]
+                            : ["✨"];
   for (let i = 0; i < count; i++) {
     const piece = document.createElement("div");
     piece.className = "splash-piece";
     piece.textContent = symbols[Math.floor(Math.random() * symbols.length)];
     const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
-    const dist = 40 + Math.random() * (40 + tier * 15);
+    const dist = 50 + Math.random() * (50 + tier * 20);
     piece.style.setProperty("--sx", `${Math.cos(angle) * dist}px`);
     piece.style.setProperty("--sy", `${Math.sin(angle) * dist}px`);
     piece.style.setProperty("--sr", `${(Math.random() - 0.5) * 540}deg`);
-    piece.style.fontSize = `${12 + Math.random() * 8}px`;
+    piece.style.fontSize = `${(tier >= 4 ? 14 : 12) + Math.random() * (tier >= 4 ? 12 : 8)}px`;
     burst.appendChild(piece);
   }
   $("app").appendChild(burst);
@@ -146,17 +184,27 @@ function startParticles() {
   if (orbsTimer) return;
   const orbInterval = () => {
     const tier = getCurrentTier();
-    return tier >= 4 ? 180 : tier >= 3 ? 250 : tier >= 2 ? 350 : tier >= 1 ? 500 : 700;
+    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 220 : tier >= 1 ? 350 : 550;
   };
   const coinInterval = () => {
     const tier = getCurrentTier();
     if (tier < 1) return 99999;
-    return tier >= 4 ? 280 : tier >= 3 ? 450 : tier >= 2 ? 800 : 1500;
+    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 500 : 950;
   };
   const billInterval = () => {
     const tier = getCurrentTier();
     if (tier < 2) return 99999;
-    return tier >= 4 ? 350 : tier >= 3 ? 600 : 1000;
+    return tier >= 4 ? 220 : tier >= 3 ? 380 : 700;
+  };
+  const gemInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 4) return 99999;
+    return 350 + Math.random() * 200;
+  };
+  const sparkleInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 3) return 99999;
+    return tier >= 4 ? 180 : 320;
   };
   const loop = (fn, getDelay) => {
     const tick = () => {
@@ -168,6 +216,8 @@ function startParticles() {
   loop(spawnOrb, orbInterval);
   loop(spawnCoin, coinInterval);
   loop(spawnBill, billInterval);
+  loop(spawnGem, gemInterval);
+  loop(spawnSparkle, sparkleInterval);
   orbsTimer = coinsTimer = billsTimer = true;
 }
 

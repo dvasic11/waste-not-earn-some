@@ -1,7 +1,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 350px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body {
-  background: radial-gradient(1200px 400px at 50% -20%, #1e293b 0%, #0b1220 60%, #060912 100%);
+  background: radial-gradient(1200px 600px at 50% -20%, #1e293b 0%, #0b1220 55%, #030610 100%);
   color: #f8fafc;
   overflow-x: hidden;
 }
@@ -21,9 +21,9 @@ body {
 .app .bg-wash {
   position: absolute; inset: -30%; z-index: 0; pointer-events: none;
   background: radial-gradient(700px 500px at 50% 50%, rgba(99,102,241,0.10), transparent 65%);
-  animation: wash-drift 12s ease-in-out infinite alternate;
+  animation: wash-drift 10s ease-in-out infinite alternate;
   transition: background 0.8s ease, opacity 0.8s ease, filter 0.8s ease;
-  opacity: 0.85;
+  opacity: 1;
 }
 @keyframes wash-drift {
   0%   { transform: translate(0,0) scale(1) rotate(0deg); }
@@ -32,27 +32,32 @@ body {
 }
 .app[data-tier="1"] .bg-wash {
   background:
-    radial-gradient(600px 400px at 25% 20%, rgba(56,189,248,0.22), transparent 60%),
-    radial-gradient(600px 400px at 75% 80%, rgba(99,102,241,0.20), transparent 60%);
-  animation-duration: 10s;
+    radial-gradient(700px 500px at 20% 15%, rgba(56,189,248,0.45), transparent 60%),
+    radial-gradient(700px 500px at 80% 85%, rgba(129,140,248,0.42), transparent 60%),
+    radial-gradient(500px 350px at 50% 50%, rgba(167,139,250,0.30), transparent 70%);
+  animation-duration: 9s;
 }
 .app[data-tier="2"] .bg-wash {
   background:
-    radial-gradient(600px 400px at 25% 20%, rgba(34,197,94,0.32), transparent 60%),
-    radial-gradient(600px 400px at 75% 80%, rgba(16,185,129,0.28), transparent 60%);
-  animation-duration: 8s;
+    radial-gradient(700px 500px at 20% 15%, rgba(34,197,94,0.60), transparent 60%),
+    radial-gradient(700px 500px at 80% 85%, rgba(16,185,129,0.55), transparent 60%),
+    radial-gradient(500px 350px at 50% 50%, rgba(132,204,22,0.40), transparent 70%);
+  animation-duration: 7s;
 }
 .app[data-tier="3"] .bg-wash {
   background:
-    radial-gradient(600px 400px at 25% 20%, rgba(234,179,8,0.40), transparent 60%),
-    radial-gradient(600px 400px at 75% 80%, rgba(34,197,94,0.30), transparent 60%);
-  animation-duration: 6s;
+    radial-gradient(700px 500px at 20% 15%, rgba(251,191,36,0.70), transparent 60%),
+    radial-gradient(700px 500px at 80% 85%, rgba(34,197,94,0.55), transparent 60%),
+    radial-gradient(500px 350px at 50% 50%, rgba(245,158,11,0.55), transparent 70%);
+  animation-duration: 5s;
 }
 .app[data-tier="4"] .bg-wash {
   background:
-    radial-gradient(600px 400px at 25% 20%, rgba(251,191,36,0.55), transparent 60%),
-    radial-gradient(600px 400px at 75% 80%, rgba(239,68,68,0.40), transparent 60%);
-  animation-duration: 4.5s;
+    radial-gradient(800px 600px at 20% 15%, rgba(251,191,36,0.95), transparent 60%),
+    radial-gradient(800px 600px at 80% 85%, rgba(239,68,68,0.75), transparent 60%),
+    radial-gradient(600px 400px at 50% 50%, rgba(244,114,182,0.55), transparent 70%),
+    radial-gradient(500px 400px at 60% 30%, rgba(34,211,238,0.40), transparent 70%);
+  animation-duration: 3.5s;
   opacity: 1;
 }
 
@@ -86,6 +91,33 @@ body {
   50%  { transform: translateY(50vh) translateX(var(--sway, 20px)) rotate(180deg); }
   90%  { opacity: 0.95; }
   100% { transform: translateY(110vh) translateX(calc(var(--sway, 20px) * -1)) rotate(360deg); opacity: 0; }
+}
+
+/* Diamonds & gems (tier 4) — sparkly twinkling stones */
+.particles .gem {
+  position: absolute; top: -30px; font-size: 20px;
+  animation: gem-fall linear infinite;
+  filter: drop-shadow(0 0 6px rgba(186,230,253,0.95)) drop-shadow(0 0 12px rgba(244,114,182,0.6));
+  opacity: 0;
+}
+@keyframes gem-fall {
+  0%   { transform: translateY(-30px) translateX(0) rotate(0deg) scale(0.6); opacity: 0; }
+  8%   { opacity: 1; transform: translateY(5vh) translateX(0) rotate(45deg) scale(1.1); }
+  50%  { transform: translateY(50vh) translateX(var(--sway, 30px)) rotate(180deg) scale(1); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(115vh) translateX(calc(var(--sway, 30px) * -1)) rotate(540deg) scale(0.8); opacity: 0; }
+}
+
+/* Sparkle pop — tiny twinkling stars layered everywhere on tier 3+ */
+.particles .sparkle {
+  position: absolute; pointer-events: none;
+  animation: sparkle-twinkle ease-in-out forwards;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.9));
+}
+@keyframes sparkle-twinkle {
+  0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+  50%  { transform: scale(1.3) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
 }
 
 /* Cash splash burst (triggered on earnings tick / tier change) */
@@ -214,6 +246,16 @@ body {
 @keyframes shimmer-sweep {
   0%   { background-position: 200% 0; }
   100% { background-position: -100% 0; }
+}
+
+/* Tier-driven body backdrop intensification — affects the whole popup. */
+.app[data-tier="1"] { background: radial-gradient(800px 500px at 50% 0%, rgba(99,102,241,0.18), transparent 70%); }
+.app[data-tier="2"] { background: radial-gradient(800px 500px at 50% 0%, rgba(34,197,94,0.25), transparent 70%); }
+.app[data-tier="3"] { background: radial-gradient(800px 500px at 50% 0%, rgba(251,191,36,0.32), transparent 70%); }
+.app[data-tier="4"] {
+  background:
+    radial-gradient(800px 500px at 50% 0%, rgba(251,191,36,0.45), transparent 70%),
+    radial-gradient(600px 400px at 50% 100%, rgba(239,68,68,0.30), transparent 70%);
 }
 
 /* Tier transition flash */

@@ -248,6 +248,16 @@ body {
   100% { background-position: -100% 0; }
 }
 
+/* Tier-driven body backdrop intensification — affects the whole popup. */
+.app[data-tier="1"] { background: radial-gradient(800px 500px at 50% 0%, rgba(99,102,241,0.18), transparent 70%); }
+.app[data-tier="2"] { background: radial-gradient(800px 500px at 50% 0%, rgba(34,197,94,0.25), transparent 70%); }
+.app[data-tier="3"] { background: radial-gradient(800px 500px at 50% 0%, rgba(251,191,36,0.32), transparent 70%); }
+.app[data-tier="4"] {
+  background:
+    radial-gradient(800px 500px at 50% 0%, rgba(251,191,36,0.45), transparent 70%),
+    radial-gradient(600px 400px at 50% 100%, rgba(239,68,68,0.30), transparent 70%);
+}
+
 /* Tier transition flash */
 .app.tier-up::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;

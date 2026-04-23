@@ -158,18 +158,21 @@ function cashSplash(intensity = 1) {
   burst.className = "splash";
   burst.style.left = `${cx}px`;
   burst.style.top = `${cy}px`;
-  const count = Math.min(14, 4 + tier * 2 + intensity * 2);
-  const symbols = tier >= 3 ? ["💵", "💰", "🪙", "✨"] : tier >= 1 ? ["🪙", "✨", "💸"] : ["✨"];
+  const count = Math.min(22, 6 + tier * 3 + intensity * 2);
+  const symbols = tier >= 4 ? ["💎", "💰", "💵", "🪙", "👑", "✨", "💍"]
+                : tier >= 3 ? ["💵", "💰", "🪙", "✨", "💎"]
+                : tier >= 1 ? ["🪙", "✨", "💸"]
+                            : ["✨"];
   for (let i = 0; i < count; i++) {
     const piece = document.createElement("div");
     piece.className = "splash-piece";
     piece.textContent = symbols[Math.floor(Math.random() * symbols.length)];
     const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
-    const dist = 40 + Math.random() * (40 + tier * 15);
+    const dist = 50 + Math.random() * (50 + tier * 20);
     piece.style.setProperty("--sx", `${Math.cos(angle) * dist}px`);
     piece.style.setProperty("--sy", `${Math.sin(angle) * dist}px`);
     piece.style.setProperty("--sr", `${(Math.random() - 0.5) * 540}deg`);
-    piece.style.fontSize = `${12 + Math.random() * 8}px`;
+    piece.style.fontSize = `${(tier >= 4 ? 14 : 12) + Math.random() * (tier >= 4 ? 12 : 8)}px`;
     burst.appendChild(piece);
   }
   $("app").appendChild(burst);
@@ -181,17 +184,27 @@ function startParticles() {
   if (orbsTimer) return;
   const orbInterval = () => {
     const tier = getCurrentTier();
-    return tier >= 4 ? 180 : tier >= 3 ? 250 : tier >= 2 ? 350 : tier >= 1 ? 500 : 700;
+    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 220 : tier >= 1 ? 350 : 550;
   };
   const coinInterval = () => {
     const tier = getCurrentTier();
     if (tier < 1) return 99999;
-    return tier >= 4 ? 280 : tier >= 3 ? 450 : tier >= 2 ? 800 : 1500;
+    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 500 : 950;
   };
   const billInterval = () => {
     const tier = getCurrentTier();
     if (tier < 2) return 99999;
-    return tier >= 4 ? 350 : tier >= 3 ? 600 : 1000;
+    return tier >= 4 ? 220 : tier >= 3 ? 380 : 700;
+  };
+  const gemInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 4) return 99999;
+    return 350 + Math.random() * 200;
+  };
+  const sparkleInterval = () => {
+    const tier = getCurrentTier();
+    if (tier < 3) return 99999;
+    return tier >= 4 ? 180 : 320;
   };
   const loop = (fn, getDelay) => {
     const tick = () => {
@@ -203,6 +216,8 @@ function startParticles() {
   loop(spawnOrb, orbInterval);
   loop(spawnCoin, coinInterval);
   loop(spawnBill, billInterval);
+  loop(spawnGem, gemInterval);
+  loop(spawnSparkle, sparkleInterval);
   orbsTimer = coinsTimer = billsTimer = true;
 }
 

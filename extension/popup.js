@@ -577,6 +577,8 @@ function showSettings(show) {
 
 async function init() {
   await render();
+  // Kick off ambient particle system immediately — alive even at tier 0.
+  startParticles();
   chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());
   timer = setInterval(() => {
     chrome.runtime.sendMessage({ type: "wb-tick-now" }, () => render());

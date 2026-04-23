@@ -54,7 +54,7 @@ function spawnOrb() {
   orb.style.height = `${size}px`;
   orb.style.left = `${Math.random() * 100}%`;
   orb.style.top = `${Math.random() * 100}%`;
-  const dur = (tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 3.5 : tier >= 1 ? 4 : 5) + Math.random() * 2;
+  const dur = (tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 7 : tier >= 1 ? 4 : 5) + Math.random() * 2;
   orb.style.animationDuration = `${dur}s`;
   orb.style.setProperty("--dx", `${(Math.random() - 0.5) * 30}px`);
   orb.style.setProperty("--dy", `${-10 - Math.random() * 30}px`);
@@ -118,7 +118,7 @@ function spawnCoin() {
                             : ["✨", "🪙", "💸"];
   coin.textContent = symbols[Math.floor(Math.random() * symbols.length)];
   coin.style.left = `${Math.random() * 90 + 5}%`;
-  const baseDur = tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 4 : 5;
+  const baseDur = tier >= 4 ? 2.5 : tier >= 3 ? 3 : tier >= 2 ? 8 : 5;
   const dur = baseDur + Math.random() * 2;
   coin.style.animationDuration = `${dur}s`;
   coin.style.fontSize = `${(tier >= 4 ? 16 : tier >= 3 ? 14 : 11) + Math.random() * (tier >= 4 ? 14 : 10)}px`;
@@ -137,7 +137,7 @@ function spawnBill() {
   bill.textContent = ["💵", "💴", "💶", "💷"][Math.floor(Math.random() * 4)];
   bill.style.left = `${Math.random() * 95}%`;
   bill.style.fontSize = `${14 + Math.random() * (tier >= 4 ? 14 : 8)}px`;
-  const dur = (tier >= 4 ? 3 : tier >= 3 ? 4 : 5) + Math.random() * 2;
+  const dur = (tier >= 4 ? 3 : tier >= 3 ? 4 : 9) + Math.random() * 2;
   bill.style.animationDuration = `${dur}s`;
   bill.style.setProperty("--sway", `${(Math.random() - 0.5) * 80}px`);
   root.appendChild(bill);

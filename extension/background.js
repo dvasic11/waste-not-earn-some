@@ -151,7 +151,9 @@ async function tick() {
       }
       // If a previous working day was missed (goal not reached), reset streak to 0.
       // Walks back from today through prior working days; stops at streakLastDay.
-      if (streak > 0 && streakLastDay) {
+      // Only runs when streak > 1 — a freshly-started streak (1) shouldn't be
+      // wiped by past missed days; today's completion is what matters.
+      if (streak > 1 && streakLastDay) {
         let missed = false;
         for (let i = 1; i <= 14; i++) {
           const probe = new Date(now);

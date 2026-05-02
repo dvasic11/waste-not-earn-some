@@ -76,12 +76,17 @@ async function tick() {
     if (delta > MAX_DELTA_SECONDS) delta = MAX_DELTA_SECONDS;
 
     const inWork = isWithinWorkingHours(new Date(now), settings.workStart, settings.workEnd);
+    const dow = new Date(now).getDay();
+    const workDays = Array.isArray(settings.workDays) && settings.workDays.length
+      ? settings.workDays
+      : [1, 2, 3, 4, 5];
+    const isWorkDay = workDays.includes(dow);
 
     let countSeconds = 0;
     let activeDomain = null;
 
     // Break only counts during working hours — outside work hours, nothing counts.
-    if (inWork) {
+    if (inWork && isWorkDay) {
       if (state.onBreak) {
         countSeconds = delta;
         activeDomain = "break";
@@ -143,6 +148,21 @@ async function tick() {
           streak = 1; // missed a day — reset and count today
         }
         streakLastDay = k;
+      }
+      // If a previous working day was missed (goal not reached), reset streak to 0.
+      // Walks back from today through prior working days; stops at streakLastDay.
+      if (streak > 0 && streakLastDay) {
+        let missed = false;
+        for (let i = 1; i <= 14; i++) {
+          const probe = new Date(now);
+          probe.setDate(probe.getDate() - i);
+          const pk = todayKey(probe);
+          if (pk === streakLastDay) break;
+          if (!workDays.includes(probe.getDay())) continue; // skip non-work days
+          const pday = state.daily[pk];
+          if (!pday || pday.earnings < goal) { missed = true; break; }
+        }
+        if (missed) { streak = 0; streakLastDay = null; }
       }
       await setState({
         cumulativeSeconds: state.cumulativeSeconds + countSeconds,

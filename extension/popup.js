@@ -409,12 +409,16 @@ async function persistIfValid() {
     $("save-status").className = "save-status err";
     return;
   }
+  const workDays = [...document.querySelectorAll("#s-workdays .wd.on")]
+    .map((b) => Number(b.dataset.d));
+  const safeWorkDays = workDays.length ? workDays : [1, 2, 3, 4, 5];
   await setSettings({
     hourlyRate: v.rate,
     workStart: v.start,
     workEnd: v.end,
     dailyGoal: v.goal,
     wasteDomains: v.domains,
+    workDays: safeWorkDays,
     redirectUrl: v.redirect || DEFAULTS.settings.redirectUrl,
   });
   $("save-status").textContent = "✓ Saved automatically";
@@ -497,6 +501,11 @@ async function render() {
     $("s-goal").value = settings.dailyGoal;
     $("s-domains").value = settings.wasteDomains.join(", ");
     $("s-redirect").value = settings.redirectUrl || "";
+    const wd = Array.isArray(settings.workDays) && settings.workDays.length
+      ? settings.workDays : [1, 2, 3, 4, 5];
+    document.querySelectorAll("#s-workdays .wd").forEach((b) => {
+      b.classList.toggle("on", wd.includes(Number(b.dataset.d)));
+    });
     refreshShortcutDisplay();
   }
 }

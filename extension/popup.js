@@ -691,6 +691,14 @@ async function init() {
     });
   });
 
+  // Working-days toggle buttons.
+  document.querySelectorAll("#s-workdays .wd").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("on");
+      scheduleSave();
+    });
+  });
+
   $("reset-btn").addEventListener("click", () => {
     if (!confirm("Reset all tracked stats?")) return;
     chrome.runtime.sendMessage({ type: "wb-reset" }, () => render());

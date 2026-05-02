@@ -470,6 +470,7 @@ async function render() {
   const breakBtn = $("break-btn");
   breakBtn.textContent = state.onBreak ? "▶ Continue work" : "☕ Take a break";
   breakBtn.classList.toggle("on", !!state.onBreak);
+  onBreakNow = !!state.onBreak;
 
   // Streak
   const streak = state.streak || 0;
@@ -558,6 +559,7 @@ function renderHistory(state, settings) {
     el.classList.toggle("today", d.key === todayKey);
     el.classList.toggle("completed", d.pct >= 100);
     el.classList.toggle("near", d.pct >= 75 && d.pct < 100);
+    el.classList.toggle("off-day", d.isWorkDay === false);
     // Star/checkmark overlay on completed days
     let star = el.querySelector(".day-star");
     if (d.pct >= 100) {

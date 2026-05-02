@@ -11,6 +11,7 @@ let prevAmountText = "";
 let particlesActive = false;
 let celebrationActive = false;
 let toastTimer = null;
+let onBreakNow = false;
 
 // ---------- Tier progression ----------
 function getTier(pct) {
@@ -41,6 +42,13 @@ let billsTimer = null;
 
 function getCurrentTier() {
   return Number($("app").dataset.tier) || 0;
+}
+
+// Effective tier for particle gating — break gives a baseline so users see
+// motion even while resting, regardless of progress.
+function effectiveTier() {
+  const t = getCurrentTier();
+  return onBreakNow ? Math.max(t, 2) : t;
 }
 
 function spawnOrb() {
@@ -108,7 +116,7 @@ function spawnSparkle() {
 function spawnCoin() {
   const root = $("particles");
   if (!root) return;
-  const tier = getCurrentTier();
+  const tier = effectiveTier();
   if (tier < 1) return;
   const coin = document.createElement("div");
   coin.className = "coin";
@@ -130,7 +138,7 @@ function spawnCoin() {
 function spawnBill() {
   const root = $("particles");
   if (!root) return;
-  const tier = getCurrentTier();
+  const tier = effectiveTier();
   if (tier < 2) return;
   const bill = document.createElement("div");
   bill.className = "bill";
@@ -183,19 +191,21 @@ function startParticles() {
   // Ambient orbs always on. Other layers self-gate by tier inside spawn fn.
   if (orbsTimer) return;
   const orbInterval = () => {
-    const tier = getCurrentTier();
-    // Tier 2 intentionally slow + sparse — calm "engagement" feel.
-    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 900 : tier >= 1 ? 350 : 550;
+    const tier = effectiveTier();
+    // Tier 2 = calm but visible. Tier 3 ramps up clearly.
+    return tier >= 4 ? 90 : tier >= 3 ? 200 : tier >= 2 ? 500 : tier >= 1 ? 350 : 550;
   };
   const coinInterval = () => {
-    const tier = getCurrentTier();
+    const tier = effectiveTier();
     if (tier < 1) return 99999;
-    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 1800 : 950;
+    // Tier 2: small, slow stream. Tier 3: clear acceleration.
+    return tier >= 4 ? 160 : tier >= 3 ? 500 : tier >= 2 ? 1100 : 950;
   };
   const billInterval = () => {
-    const tier = getCurrentTier();
+    const tier = effectiveTier();
     if (tier < 2) return 99999;
-    return tier >= 4 ? 220 : tier >= 3 ? 380 : 2200;
+    // Tier 2: rare slow drift. Tier 3: noticeably more.
+    return tier >= 4 ? 220 : tier >= 3 ? 700 : 1500;
   };
   const gemInterval = () => {
     const tier = getCurrentTier();

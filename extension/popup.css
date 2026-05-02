@@ -633,3 +633,20 @@ kbd {
 .btn-link:hover { background: #111827; color: #f8fafc; }
 #settings code { background: #1f2937; padding: 1px 5px; border-radius: 4px; font-size: 11px; color: #fde68a; }
 .warn-note { display: block; margin-top: 4px; color: #fbbf24; line-height: 1.4; }
+
+/* Working-days picker */
+.workdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 6px; }
+.workdays .wd {
+  background: #0f172a; border: 1px solid #1f2937; color: #94a3b8;
+  border-radius: 8px; padding: 6px 0; font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.workdays .wd:hover { border-color: #334155; }
+.workdays .wd.on {
+  background: linear-gradient(135deg, rgba(34,197,94,0.35), rgba(245,158,11,0.25));
+  border-color: rgba(245,158,11,0.5); color: #fde68a;
+}
+
+/* Greyed-out non-working days in the 7-day history */
+.day.off-day { opacity: 0.4; filter: grayscale(0.85); }
+.day.off-day .day-label, .day.off-day .day-pct { color: #64748b; text-shadow: none; }

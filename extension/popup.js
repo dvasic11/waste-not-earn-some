@@ -11,6 +11,7 @@ let prevAmountText = "";
 let particlesActive = false;
 let celebrationActive = false;
 let toastTimer = null;
+let onBreakNow = false;
 
 // ---------- Tier progression ----------
 function getTier(pct) {
@@ -41,6 +42,13 @@ let billsTimer = null;
 
 function getCurrentTier() {
   return Number($("app").dataset.tier) || 0;
+}
+
+// Effective tier for particle gating — break gives a baseline so users see
+// motion even while resting, regardless of progress.
+function effectiveTier() {
+  const t = getCurrentTier();
+  return onBreakNow ? Math.max(t, 2) : t;
 }
 
 function spawnOrb() {
@@ -108,7 +116,7 @@ function spawnSparkle() {
 function spawnCoin() {
   const root = $("particles");
   if (!root) return;
-  const tier = getCurrentTier();
+  const tier = effectiveTier();
   if (tier < 1) return;
   const coin = document.createElement("div");
   coin.className = "coin";
@@ -130,7 +138,7 @@ function spawnCoin() {
 function spawnBill() {
   const root = $("particles");
   if (!root) return;
-  const tier = getCurrentTier();
+  const tier = effectiveTier();
   if (tier < 2) return;
   const bill = document.createElement("div");
   bill.className = "bill";
@@ -183,19 +191,21 @@ function startParticles() {
   // Ambient orbs always on. Other layers self-gate by tier inside spawn fn.
   if (orbsTimer) return;
   const orbInterval = () => {
-    const tier = getCurrentTier();
-    // Tier 2 intentionally slow + sparse — calm "engagement" feel.
-    return tier >= 4 ? 90 : tier >= 3 ? 150 : tier >= 2 ? 900 : tier >= 1 ? 350 : 550;
+    const tier = effectiveTier();
+    // Tier 2 = calm but visible. Tier 3 ramps up clearly.
+    return tier >= 4 ? 90 : tier >= 3 ? 200 : tier >= 2 ? 500 : tier >= 1 ? 350 : 550;
   };
   const coinInterval = () => {
-    const tier = getCurrentTier();
+    const tier = effectiveTier();
     if (tier < 1) return 99999;
-    return tier >= 4 ? 160 : tier >= 3 ? 280 : tier >= 2 ? 1800 : 950;
+    // Tier 2: small, slow stream. Tier 3: clear acceleration.
+    return tier >= 4 ? 160 : tier >= 3 ? 500 : tier >= 2 ? 1100 : 950;
   };
   const billInterval = () => {
-    const tier = getCurrentTier();
+    const tier = effectiveTier();
     if (tier < 2) return 99999;
-    return tier >= 4 ? 220 : tier >= 3 ? 380 : 2200;
+    // Tier 2: rare slow drift. Tier 3: noticeably more.
+    return tier >= 4 ? 220 : tier >= 3 ? 700 : 1500;
   };
   const gemInterval = () => {
     const tier = getCurrentTier();
@@ -399,12 +409,16 @@ async function persistIfValid() {
     $("save-status").className = "save-status err";
     return;
   }
+  const workDays = [...document.querySelectorAll("#s-workdays .wd.on")]
+    .map((b) => Number(b.dataset.d));
+  const safeWorkDays = workDays.length ? workDays : [1, 2, 3, 4, 5];
   await setSettings({
     hourlyRate: v.rate,
     workStart: v.start,
     workEnd: v.end,
     dailyGoal: v.goal,
     wasteDomains: v.domains,
+    workDays: safeWorkDays,
     redirectUrl: v.redirect || DEFAULTS.settings.redirectUrl,
   });
   $("save-status").textContent = "✓ Saved automatically";
@@ -460,6 +474,7 @@ async function render() {
   const breakBtn = $("break-btn");
   breakBtn.textContent = state.onBreak ? "▶ Continue work" : "☕ Take a break";
   breakBtn.classList.toggle("on", !!state.onBreak);
+  onBreakNow = !!state.onBreak;
 
   // Streak
   const streak = state.streak || 0;
@@ -486,6 +501,11 @@ async function render() {
     $("s-goal").value = settings.dailyGoal;
     $("s-domains").value = settings.wasteDomains.join(", ");
     $("s-redirect").value = settings.redirectUrl || "";
+    const wd = Array.isArray(settings.workDays) && settings.workDays.length
+      ? settings.workDays : [1, 2, 3, 4, 5];
+    document.querySelectorAll("#s-workdays .wd").forEach((b) => {
+      b.classList.toggle("on", wd.includes(Number(b.dataset.d)));
+    });
     refreshShortcutDisplay();
   }
 }
@@ -548,6 +568,7 @@ function renderHistory(state, settings) {
     el.classList.toggle("today", d.key === todayKey);
     el.classList.toggle("completed", d.pct >= 100);
     el.classList.toggle("near", d.pct >= 75 && d.pct < 100);
+    el.classList.toggle("off-day", d.isWorkDay === false);
     // Star/checkmark overlay on completed days
     let star = el.querySelector(".day-star");
     if (d.pct >= 100) {
@@ -666,6 +687,14 @@ async function init() {
     });
     $(id).addEventListener("change", () => {
       validate();
+      scheduleSave();
+    });
+  });
+
+  // Working-days toggle buttons.
+  document.querySelectorAll("#s-workdays .wd").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("on");
       scheduleSave();
     });
   });

@@ -16,6 +16,8 @@ export const DEFAULTS = {
       "reddit.com",
       "facebook.com",
     ],
+    // Working days of the week — 0=Sunday … 6=Saturday. Default Mon–Fri.
+    workDays: [1, 2, 3, 4, 5],
     // Productivity shortcut redirect target (Chrome command set in manifest).
     redirectUrl: "https://mail.google.com",
   },
@@ -80,12 +82,16 @@ export function getTodayStats(state) {
 export function getLastNDays(state, settings, n = 7) {
   const out = [];
   const goal = Math.max(0, Number(settings.dailyGoal) || 0);
+  const workDays = Array.isArray(settings.workDays) && settings.workDays.length
+    ? settings.workDays
+    : [1, 2, 3, 4, 5];
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const k = todayKey(d);
     const day = state.daily[k] || { seconds: 0, earnings: 0 };
     const pct = goal > 0 ? Math.min(200, (day.earnings / goal) * 100) : 0;
+    const isWorkDay = workDays.includes(d.getDay());
     out.push({
       key: k,
       date: d,
@@ -93,6 +99,7 @@ export function getLastNDays(state, settings, n = 7) {
       earnings: day.earnings,
       seconds: day.seconds,
       pct,
+      isWorkDay,
     });
   }
   return out;

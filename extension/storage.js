@@ -16,6 +16,8 @@ export const DEFAULTS = {
       "reddit.com",
       "facebook.com",
     ],
+    // Working days of the week — 0=Sunday … 6=Saturday. Default Mon–Fri.
+    workDays: [1, 2, 3, 4, 5],
     // Productivity shortcut redirect target (Chrome command set in manifest).
     redirectUrl: "https://mail.google.com",
   },

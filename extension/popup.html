@@ -129,6 +129,18 @@
             <span class="err" id="err-end"></span>
           </label>
         </div>
+        <label>Working days
+          <div id="s-workdays" class="workdays">
+            <button type="button" class="wd" data-d="1">Mon</button>
+            <button type="button" class="wd" data-d="2">Tue</button>
+            <button type="button" class="wd" data-d="3">Wed</button>
+            <button type="button" class="wd" data-d="4">Thu</button>
+            <button type="button" class="wd" data-d="5">Fri</button>
+            <button type="button" class="wd" data-d="6">Sat</button>
+            <button type="button" class="wd" data-d="0">Sun</button>
+          </div>
+          <span class="muted small">Tracking only runs on selected days. Streak resets if you miss a working day's goal.</span>
+        </label>
         <label>Daily waste goal ($)
           <input id="s-goal" type="number" min="0" max="100000" step="1" />
           <span class="err" id="err-goal"></span>
